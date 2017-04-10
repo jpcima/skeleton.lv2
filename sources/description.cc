@@ -42,7 +42,7 @@ static UIManifest create_ui_manifest() {
   m.uri = ui_uri;
 
   // [!!!IMPORTANT!!!] set UI class
-  m.uiclass = LV2_UI__Qt4UI;
+  m.uiclass = LV2_UI__Qt5UI;
 
   // request features
   m.features.push_back(FeatureRequest{LV2_URID__map, RequiredFeature::Yes});
