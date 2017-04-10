@@ -6,7 +6,7 @@
 
 class UI {
  public:
-  explicit UI(void *parent = nullptr);
+  UI(void *parent, LV2_URID_Map *map, LV2_URID_Unmap *unmap);
   ~UI();
 
   LV2UI_Widget widget() const;

@@ -1,10 +1,11 @@
 #pragma once
+#include "lv2all.h"
 #include <memory>
 #include <cstdint>
 
 class Effect {
  public:
-  explicit Effect(double rate);
+  Effect(double rate, LV2_URID_Map *map, LV2_URID_Unmap *unmap);
   ~Effect();
 
   //============================================================================

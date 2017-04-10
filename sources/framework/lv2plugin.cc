@@ -1,6 +1,7 @@
 #include "effect.h"
 #include "description.h"
 #include "lv2all.h"
+#include <boost/utility/string_view.hpp>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
@@ -10,9 +11,20 @@ static LV2_Handle instantiate(
     double rate,
     const char *bundle_path,
     const LV2_Feature *const *features) {
+  LV2_URID_Map *map {};
+  LV2_URID_Unmap *unmap {};
+
+  for (const LV2_Feature *const *p = features, *f; (f = *p); ++p) {
+    boost::string_view uri = f->URI;
+    if (uri == LV2_URID__map)
+      map = reinterpret_cast<LV2_URID_Map *>(f->data);
+    else if (uri == LV2_URID__unmap)
+      unmap = reinterpret_cast<LV2_URID_Unmap *>(f->data);
+  }
+
   std::unique_ptr<Effect> fx;
   try {
-    fx.reset(new Effect(rate));
+    fx.reset(new Effect(rate, map, unmap));
   } catch (std::exception &ex) {
     std::cerr << "error instanciating: " << ex.what() << "\n";
     return nullptr;

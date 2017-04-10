@@ -35,7 +35,7 @@ static LV2UI_Handle instantiate(const LV2UI_Descriptor *descriptor,
 
   std::unique_ptr<UI> ui;
   try {
-    ui.reset(new UI(parent));
+    ui.reset(new UI(parent, map, unmap));
     if (resize)
       resize->ui_resize(resize->handle, UI::width(), UI::height());
   } catch (std::exception &ex) {
