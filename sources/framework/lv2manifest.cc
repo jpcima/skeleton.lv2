@@ -138,7 +138,7 @@ static void write_ui_manifest(const UIManifest &m, std::ostream &ttl) {
     ttl << "  lv2:" << (f.required ? "required" : "optional") << "Feature "
         << ttl_uri(f.uri) << " ;\n";
   for (const std::string &e : m.extension_data)
-    ttl << "lv2:extensionData " << ttl_uri(e) << " ;\n";
+    ttl << "  lv2:extensionData " << ttl_uri(e) << " ;\n";
 
   ttl << "  ui:portNotification [\n";
   // TODO: port notifications
