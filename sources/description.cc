@@ -30,7 +30,7 @@ static EffectManifest create_effect_manifest() {
     p->symbol = "event_input";
     p->name = "Event input";
     p->buffer_type = LV2_ATOM__Sequence;
-    p->supports = LV2_MIDI__MidiEvent;
+    p->supports.push_back(LV2_MIDI__MidiEvent);
     m.ports.emplace_back(std::move(p));
   }
 

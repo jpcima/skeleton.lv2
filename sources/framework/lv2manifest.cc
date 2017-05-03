@@ -70,79 +70,93 @@ static void write_prefix(std::ostream &ttl) {
 static void write_effect_manifest(const EffectManifest &m, std::ostream &ttl) {
   write_prefix(ttl);
 
-  ttl << ttl_uri(m.uri) << "\n";
-  ttl << "  a lv2:Plugin";
+  ttl << "\n" << ttl_uri(m.uri);
+  ttl << "\n  a lv2:Plugin";
   for (const std::string &cat : m.categories) ttl << ", " << ttl_uri(cat);
-  ttl << " ;\n";
-  ttl << "  doap:name " << ttl_string(m.name) << " ;\n";
+  ttl << " ;";
+  ttl << "\n  doap:name " << ttl_string(m.name) << " ;";
   for (const FeatureRequest &f : m.features)
-    ttl << "  lv2:" << (f.required ? "required" : "optional") << "Feature "
-        << ttl_uri(f.uri) << " ;\n";
+    ttl << "\n  lv2:" << (f.required ? "required" : "optional") << "Feature "
+        << ttl_uri(f.uri) << " ;";
   for (const std::string &e : m.extension_data)
-    ttl << "lv2:extensionData " << ttl_uri(e) << " ;\n";
+    ttl << "\n  lv2:extensionData " << ttl_uri(e) << " ;";
 
-  ttl << "  ui:ui " << ttl_uri(ui_uri) << " ;\n";
+  ttl << "\n  ui:ui " << ttl_uri(ui_uri) << " ;";
 
-  ttl << "  lv2:port [\n";
   for (size_t i = 0, n = m.ports.size(); i < n; ++i) {
-    if (i > 0)
-      ttl << "  ] , [\n";
+    ttl << "\n  lv2:port [";
 
     const Port &port = *m.ports[i];
     const PortKind kind = port.kind();
 
-    ttl << "    a lv2:" << port.direction._to_string() << "Port";
+    ttl << "\n    a lv2:" << port.direction._to_string() << "Port";
     switch (kind) {
       case PortKind::Audio: ttl << ", lv2:AudioPort"; break;
       case PortKind::Control: ttl << ", lv2:ControlPort"; break;
       case PortKind::Event: ttl << ", atom:AtomPort" ; break;
     }
-    ttl << " ;\n";
+    ttl << " ;";
 
-    ttl << "    lv2:index " << i << " ; \n";
-    ttl << "    lv2:symbol " << ttl_string(port.symbol) << " ; \n";
-    ttl << "    lv2:name " << ttl_string(port.name) << " ; \n";
+    ttl << "\n    lv2:index " << i << " ;";
+    ttl << "\n    lv2:symbol " << ttl_string(port.symbol) << " ;";
+    ttl << "\n    lv2:name " << ttl_string(port.name) << " ;";
     if (!port.designation.empty())
-      ttl << "    lv2:designation " << ttl_uri(port.designation) << " ; \n";
+      ttl << "\n    lv2:designation " << ttl_uri(port.designation) << " ;";
 
     switch (kind) {
       case PortKind::Control: {
         const ControlPort &cp = static_cast<const ControlPort &>(port);
-        ttl << "    lv2:default " << cp.default_value << " ;\n";
-        ttl << "    lv2:minimum " << cp.minimum_value << " ;\n";
-        ttl << "    lv2:maximum " << cp.maximum_value << " ;\n";
+        ttl << "\n    lv2:default " << cp.default_value << " ;";
+        ttl << "\n    lv2:minimum " << cp.minimum_value << " ;";
+        ttl << "\n    lv2:maximum " << cp.maximum_value << " ;";
         break;
       }
       case PortKind::Event: {
         const EventPort &ep = static_cast<const EventPort &>(port);
         if (!ep.buffer_type.empty())
-          ttl << "    atom:bufferType " << ttl_uri(ep.buffer_type) << " ;\n";
-        if (!ep.supports.empty())
-          ttl << "    atom:supports " << ttl_uri(ep.supports) << " ;\n";
+          ttl << "\n    atom:bufferType " << ttl_uri(ep.buffer_type) << " ;";
+        if (!ep.supports.empty()) {
+          ttl << "\n    atom:supports " << ttl_uri(ep.supports[0]);
+          for (unsigned i = 1, n = ep.supports.size(); i < n; ++i)
+            ttl << ", " << ttl_uri(ep.supports[i]);
+          ttl << " ;";
+        }
         break;
       }
       default:
         break;
     }
+    ttl << "\n  ] ;";
   }
-  ttl << "  ] .\n";
+
+  ttl.seekp(-1, std::ios::cur);
+  ttl << ".\n";
 }
 
 static void write_ui_manifest(const UIManifest &m, std::ostream &ttl) {
   write_prefix(ttl);
 
-  ttl << ttl_uri(m.uri) << "\n";
-  ttl << "  a " << ttl_uri(m.uiclass) << " ;\n";
+  ttl << "\n" << ttl_uri(m.uri);
+  ttl << "\n  a " << ttl_uri(m.uiclass) << " ;";
 
   for (const FeatureRequest &f : m.features)
-    ttl << "  lv2:" << (f.required ? "required" : "optional") << "Feature "
-        << ttl_uri(f.uri) << " ;\n";
+    ttl << "\n  lv2:" << (f.required ? "required" : "optional") << "Feature "
+        << ttl_uri(f.uri) << " ;";
   for (const std::string &e : m.extension_data)
-    ttl << "  lv2:extensionData " << ttl_uri(e) << " ;\n";
+    ttl << "\n  lv2:extensionData " << ttl_uri(e) << " ;";
+  for (const PortNotification &pn : m.port_notifications) {
+    ttl << "\n  ui:portNotification ["
+        << "\n    ui:plugin " << ttl_uri(m.effect_uri) << " ;"
+        << "\n    lv2:symbol " << ttl_string(pn.symbol) << " ;";
+    if (!pn.protocol.empty())
+      ttl << "\n    ui:protocol " << ttl_uri(pn.protocol) << " ;";
+    if (!pn.notify_type.empty())
+      ttl << "\n    ui:notifyType " << ttl_uri(pn.notify_type) << " ;";
+    ttl << "\n  ] ;";
+  }
 
-  ttl << "  ui:portNotification [\n";
-  // TODO: port notifications
-  ttl << "  ] .\n";
+  ttl.seekp(-1, std::ios::cur);
+  ttl << ".\n";
 }
 
 //==============================================================================

@@ -60,8 +60,14 @@ struct ControlPort : Port {
 
 struct EventPort : Port {
   std::string buffer_type;
-  std::string supports;
+  std::vector<std::string> supports;
   PortKind kind() const override { return PortKind::Event; }
+};
+
+struct PortNotification {
+  std::string symbol;
+  std::string protocol;
+  std::string notify_type;
 };
 
 struct EffectManifest {
@@ -75,7 +81,9 @@ struct EffectManifest {
 
 struct UIManifest {
   std::string uri;
+  std::string effect_uri;
   std::string uiclass;
   std::vector<FeatureRequest> features;
   std::vector<std::string> extension_data;
+  std::vector<PortNotification> port_notifications;
 };
