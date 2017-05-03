@@ -14,8 +14,6 @@ provided for each toolkit.
 
 ## How to use
 
-This project has submodules, so make sure to check out the dependencies into the project.
-
 The source code is compiled using [CMake](https://cmake.org) commands.
 
     mkdir build
