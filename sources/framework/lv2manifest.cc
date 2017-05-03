@@ -5,6 +5,7 @@
 #include <iterator>
 #include <string>
 #include <fstream>
+#include <cassert>
 
 //==============================================================================
 static void write_prefix(std::ostream &ttl);
@@ -76,8 +77,8 @@ static void write_effect_manifest(const EffectManifest &m, std::ostream &ttl) {
   ttl << " ;";
   ttl << "\n  doap:name " << ttl_string(m.name) << " ;";
   for (const FeatureRequest &f : m.features)
-    ttl << "\n  lv2:" << (f.required ? "required" : "optional") << "Feature "
-        << ttl_uri(f.uri) << " ;";
+    ttl << "\n  lv2:" << (bool(f.required) ? "required" : "optional")
+        << "Feature " << ttl_uri(f.uri) << " ;";
   for (const std::string &e : m.extension_data)
     ttl << "\n  lv2:extensionData " << ttl_uri(e) << " ;";
 
@@ -89,11 +90,17 @@ static void write_effect_manifest(const EffectManifest &m, std::ostream &ttl) {
     const Port &port = *m.ports[i];
     const PortKind kind = port.kind();
 
-    ttl << "\n    a lv2:" << port.direction._to_string() << "Port";
+    ttl << "\n    a lv2:";
+    switch (port.direction) {
+      case PortDirection::Input: ttl << "InputPort"; break;
+      case PortDirection::Output: ttl << "OutputPort"; break;
+      default: assert(false);
+    }
     switch (kind) {
       case PortKind::Audio: ttl << ", lv2:AudioPort"; break;
       case PortKind::Control: ttl << ", lv2:ControlPort"; break;
       case PortKind::Event: ttl << ", atom:AtomPort" ; break;
+      default: assert(false);
     }
     ttl << " ;";
 
@@ -140,8 +147,8 @@ static void write_ui_manifest(const UIManifest &m, std::ostream &ttl) {
   ttl << "\n  a " << ttl_uri(m.uiclass) << " ;";
 
   for (const FeatureRequest &f : m.features)
-    ttl << "\n  lv2:" << (f.required ? "required" : "optional") << "Feature "
-        << ttl_uri(f.uri) << " ;";
+    ttl << "\n  lv2:" << (bool(f.required) ? "required" : "optional")
+        << "Feature " << ttl_uri(f.uri) << " ;";
   for (const std::string &e : m.extension_data)
     ttl << "\n  lv2:extensionData " << ttl_uri(e) << " ;";
   for (const PortNotification &pn : m.port_notifications) {

@@ -3,7 +3,6 @@ include(FindPkgConfig)
 
 pkg_check_modules(LV2 lv2 REQUIRED)
 find_package(Boost REQUIRED)
-set(BetterEnums_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/thirdparty/better-enums")
 
 configure_file(
   "${PROJECT_SOURCE_DIR}/project.h.in"
@@ -29,8 +28,7 @@ add_custom_target(${name}-manifest ALL
   "${CMAKE_CURRENT_BINARY_DIR}/lv2/${PROJECT_NAME}.lv2")
 target_include_directories(${name}
   PRIVATE ${LV2_INCLUDE_DIRS}
-  PRIVATE "${Boost_INCLUDE_DIR}"
-  PRIVATE "${BetterEnums_INCLUDE_DIR}")
+  PRIVATE "${Boost_INCLUDE_DIR}")
 endmacro()
 
 macro(add_lv2_ui name)
@@ -44,8 +42,7 @@ set_target_properties(${name} PROPERTIES
   CXX_VISIBILITY_PRESET "hidden")
 target_include_directories(${name}
   PRIVATE ${LV2_INCLUDE_DIRS}
-  PRIVATE "${Boost_INCLUDE_DIR}"
-  PRIVATE "${BetterEnums_INCLUDE_DIR}")
+  PRIVATE "${Boost_INCLUDE_DIR}")
 endmacro()
 
 macro(add_lv2_qt5ui name)

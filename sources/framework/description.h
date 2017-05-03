@@ -1,6 +1,5 @@
 #pragma once
 #include "../meta/project.h"
-#include <enum.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -17,21 +16,21 @@ extern const EffectManifest effect_manifest;
 extern const UIManifest ui_manifest;
 
 //==============================================================================
-BETTER_ENUM(
-    PortDirection, int,
-    Input,
-    Output);
+enum class PortDirection {
+  Input,
+  Output,
+};
 
-BETTER_ENUM(
-    PortKind, int,
-    Audio,
-    Control,
-    Event);
+enum class PortKind {
+  Audio,
+  Control,
+  Event,
+};
 
-BETTER_ENUM(
-    RequiredFeature, bool,
-    No,
-    Yes);
+enum class RequiredFeature : bool {
+  No,
+  Yes,
+};
 
 struct FeatureRequest {
   std::string uri;
