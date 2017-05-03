@@ -1,5 +1,6 @@
 #pragma once
 #include "../meta/project.h"
+#include <boost/optional.hpp>
 #include <memory>
 #include <string>
 #include <vector>
@@ -13,7 +14,7 @@ static constexpr char ui_binary_file[] = PROJECT_NAME ".ui";
 struct EffectManifest;
 struct UIManifest;
 extern const EffectManifest effect_manifest;
-extern const UIManifest ui_manifest;
+extern const boost::optional<UIManifest> ui_manifest;
 
 //==============================================================================
 enum class PortDirection {

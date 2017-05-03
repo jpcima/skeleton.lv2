@@ -25,16 +25,13 @@ static std::string cat3(boost::string_view a, boost::string_view b, boost::strin
 LV2_SYMBOL_EXPORT
 bool lv2_write_manifest(const char *directory) {
   const EffectManifest &fxm = ::effect_manifest;
-  const UIManifest &uim = ::ui_manifest;
+  const boost::optional<UIManifest> &opt_uim = ::ui_manifest;
 
   std::string effect_ttl_file = cat2(effect_binary_file, ".ttl");
   std::string ui_ttl_file = cat2(ui_binary_file, ".ttl");
 
-  std::ofstream ttl(cat2(directory, "/manifest.ttl"), std::ios::binary);
-  std::ofstream fxttl(cat3(directory, "/", effect_ttl_file), std::ios::binary);
-  std::ofstream uittl(cat3(directory, "/", ui_ttl_file), std::ios::binary);
-
   //============================================================================
+  std::ofstream ttl(cat2(directory, "/manifest.ttl"), std::ios::binary);
   write_prefix(ttl);
 
   ttl << ttl_uri(fxm.uri) << "\n";
@@ -42,21 +39,33 @@ bool lv2_write_manifest(const char *directory) {
   ttl << "  lv2:binary " << ttl_uri(effect_binary_file) << " ;\n";
   ttl << "  rdfs:seeAlso " << ttl_uri(effect_ttl_file) << " .\n";
 
-  ttl << ttl_uri(uim.uri) << "\n";
-  ttl << "  a " << ttl_uri(uim.uiclass) << " ;\n";
-  ttl << "  lv2:binary " << ttl_uri(ui_binary_file) << " ;\n";
-  ttl << "  rdfs:seeAlso " << ttl_uri(ui_ttl_file) << " .\n";
+  if (opt_uim) {
+    const UIManifest &uim = *opt_uim;
+    ttl << ttl_uri(uim.uri) << "\n";
+    ttl << "  a " << ttl_uri(uim.uiclass) << " ;\n";
+    ttl << "  lv2:binary " << ttl_uri(ui_binary_file) << " ;\n";
+    ttl << "  rdfs:seeAlso " << ttl_uri(ui_ttl_file) << " .\n";
+  }
+
+  if (!ttl.flush())
+    return false;
 
   //============================================================================
+  std::ofstream fxttl(cat3(directory, "/", effect_ttl_file), std::ios::binary);
   write_effect_manifest(fxm, fxttl);
-  write_ui_manifest(uim, uittl);
+  if (!fxttl.flush())
+    return false;
+
+  if (opt_uim) {
+    const UIManifest &uim = *opt_uim;
+    std::ofstream uittl(cat3(directory, "/", ui_ttl_file), std::ios::binary);
+    write_ui_manifest(uim, uittl);
+    if (!uittl.flush())
+      return false;
+  }
 
   //============================================================================
-  ttl.flush();
-  fxttl.flush();
-  uittl.flush();
-
-  return ttl.good() && fxttl.good() && uittl.good();
+  return true;
 }
 
 static void write_prefix(std::ostream &ttl) {

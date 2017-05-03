@@ -37,7 +37,7 @@ static EffectManifest create_effect_manifest() {
   return m;
 }
 
-static UIManifest create_ui_manifest() {
+static boost::optional<UIManifest> create_ui_manifest() {
   UIManifest m;
   m.uri = ui_uri;
 
@@ -54,4 +54,4 @@ static UIManifest create_ui_manifest() {
 }
 
 const EffectManifest effect_manifest = create_effect_manifest();
-const UIManifest ui_manifest = create_ui_manifest();
+const boost::optional<UIManifest> ui_manifest = create_ui_manifest();
