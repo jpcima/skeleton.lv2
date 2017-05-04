@@ -8,7 +8,7 @@ if(NOT NANOVG_GL_VERSION)
   set(NANOVG_GL_VERSION "GL2" CACHE STRING "OpenGL version for NanoVG")
 endif()
 
-add_library(nanovg STATIC "${PROJECT_SOURCE_DIR}/cmake/TargetNanoVG_impl.c")
+add_library(nanovg STATIC "${CMAKE_CURRENT_LIST_DIR}/TargetNanoVG_impl.c")
 target_include_directories(nanovg PUBLIC "${NANOVG_SOURCE_DIR}/src")
 
 find_package(OpenGL REQUIRED)
