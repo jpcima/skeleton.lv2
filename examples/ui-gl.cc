@@ -8,7 +8,6 @@
 struct UI::Impl {
   static constexpr unsigned width = 600;
   static constexpr unsigned height = 400;
-  UI *Q = nullptr;
   PuglView *view {};
   PuglNativeWindow parent = 0;
   PuglNativeWindow widget = 0;
@@ -23,7 +22,6 @@ struct UI::Impl {
 //==============================================================================
 UI::UI(void *parent, LV2_URID_Map *map, LV2_URID_Unmap *unmap)
     : P(new Impl) {
-  P->Q = this;
   P->parent = PuglNativeWindow(parent);
 }
 
@@ -59,8 +57,9 @@ bool UI::idle() {
   if (!view)
     return false;
 
-  puglEnterContext(view);
   puglProcessEvents(view);
+
+  puglEnterContext(view);
 
   if (!P->initialized_gl) {
     P->init_gl();
