@@ -39,6 +39,7 @@ static EffectManifest create_effect_manifest() {
 static boost::optional<UIManifest> create_ui_manifest() {
   UIManifest m;
   m.uri = ui_uri;
+  m.effect_uri = effect_uri;
 
   // [!!!IMPORTANT!!!] set UI class
   m.uiclass = LV2_UI__PlatformSpecificUI;
