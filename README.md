@@ -60,3 +60,5 @@ In order to get an idle callback, do these three things:
 - request the **ui:idleInterface** feature;
 - declare extension data for **ui:idleInterface**;
 - provide the idle interface in the plugin; this is done by returning true in **UI::needs_idle_callback**.
+
+Please note: UIs driven by idle processing have their callbacks invoked at a fixed rate; for performance consideration, it is advisable to save CPU resource by maintaining a dirty state bit in order to avoid redrawing unnecessarily.
