@@ -41,13 +41,25 @@ static boost::optional<UIManifest> create_ui_manifest() {
   m.uri = ui_uri;
 
   // [!!!IMPORTANT!!!] set UI class
-  m.uiclass = LV2_UI__Qt5UI;
+#if defined(__APPLE__)
+  m.uiclass = LV2_UI__CocoaUI;
+#elif defined(_WIN32)
+  m.uiclass = LV2_UI__WindowsUI;
+#elif defined(__unix__)
+  m.uiclass = LV2_UI__X11UI;
+#else
+# error unknown UI type for this platform
+#endif
 
   // request features
   m.features.push_back(FeatureRequest{LV2_URID__map, RequiredFeature::Yes});
   m.features.push_back(FeatureRequest{LV2_URID__unmap, RequiredFeature::Yes});
   m.features.push_back(FeatureRequest{LV2_UI__resize, RequiredFeature::No});
   m.features.push_back(FeatureRequest{LV2_UI__parent, RequiredFeature::No});
+  m.features.push_back(FeatureRequest{LV2_UI__idleInterface, RequiredFeature::Yes});
+
+  // extension data
+  m.extension_data.push_back(LV2_UI__idleInterface);
 
   return m;
 }

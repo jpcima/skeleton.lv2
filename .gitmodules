@@ -1,0 +1,3 @@
+[submodule "thirdparty/pugl"]
+	path = thirdparty/pugl
+	url = http://git.drobilla.net/pugl.git/

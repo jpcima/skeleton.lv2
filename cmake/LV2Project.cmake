@@ -72,3 +72,9 @@ macro(add_lv2_gtk2ui name)
   target_include_directories(${name}
     PRIVATE ${GTK2_INCLUDE_DIRS})
 endmacro()
+
+macro(add_lv2_glui name)
+  include(TargetPugl)
+  add_lv2_ui(${name} ${ARGN})
+  target_link_libraries(${name} pugl)
+endmacro()
