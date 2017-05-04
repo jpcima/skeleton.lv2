@@ -36,9 +36,15 @@ endif()
 
 if(NANOVG_USE_GLEW)
   find_package(GLEW REQUIRED)
+  find_package(StaticGLEW)
   target_compile_definitions(nanovg PRIVATE "NANOVG_GLEW=1")
   target_include_directories(nanovg PRIVATE ${GLEW_INCLUDE_DIRS})
-  target_link_libraries(nanovg ${GLEW_LIBRARIES})
+  if(StaticGLEW_FOUND)
+    target_compile_definitions(nanovg PRIVATE ${StaticGLEW_DEFINITIONS})
+    target_link_libraries(nanovg ${StaticGLEW_LIBRARIES})
+  else()
+    target_link_libraries(nanovg ${GLEW_LIBRARIES})
+  endif()
 endif()
 
 set_target_properties(nanovg PROPERTIES
