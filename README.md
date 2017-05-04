@@ -51,3 +51,12 @@ They link the dependencies and rename the target according to LV2 conventions.
     add_lv2_gtk2ui  # Gtk+ 2
     add_lv2_glui    # OpenGL
     add_lv2_nvgui   # OpenGL with NanoVG
+
+In the manifest of your UI, you want to make sure that its **uiclass** matches the UI toolkit used.
+If you develop with OpenGL or native toolkits, use **LV2_UI__PlatformSpecificUI** which is defined as a synonym for the platform's native window system.
+
+Furthermore, if you use the native window system, the UI runs in LV2's idle interface callback.
+In order to get an idle callback, do these three things:
+- request the **ui:idleInterface** feature;
+- declare extension data for **ui:idleInterface**;
+- provide the idle interface in the plugin; this is done by returning true in **UI::needs_idle_callback**.
