@@ -24,6 +24,7 @@ macro(add_lv2_fx name)
     PREFIX "" SUFFIX ".fx"
     LIBRARY_OUTPUT_NAME "${PROJECT_NAME}"
     LIBRARY_OUTPUT_DIRECTORY "lv2/${PROJECT_NAME}.lv2"
+    C_VISIBILITY_PRESET "hidden"
     CXX_VISIBILITY_PRESET "hidden")
   if(NOT CMAKE_CROSSCOMPILING)
     add_custom_target(${name}-manifest ALL
@@ -43,6 +44,7 @@ macro(add_lv2_ui name)
     PREFIX "" SUFFIX ".ui"
     LIBRARY_OUTPUT_NAME "${PROJECT_NAME}"
     LIBRARY_OUTPUT_DIRECTORY "lv2/${PROJECT_NAME}.lv2"
+    C_VISIBILITY_PRESET "hidden"
     CXX_VISIBILITY_PRESET "hidden")
   target_include_directories(${name}
     PRIVATE ${LV2_INCLUDE_DIRS}
