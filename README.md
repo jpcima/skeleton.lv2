@@ -28,6 +28,9 @@ The source hierarchy is simple, and it has initially 3 source files for the prog
 - **sources/effect.cc** - this is the audio effect
 - **sources/ui.cc** - this is the GUI
 
+The plugin can be associated with many kinds of graphical UIs: Gtk2, Gtk3, Qt4, Qt5, OpenGL, or none.
+If you use OpenGL, make sure to also check out David Robillard's [Pugl](https://drobilla.net/software/pugl), a submodule of this framework.
+
 Once compiled, you will find a lv2 directory structure inside the build directory.
 Add this directory to the search path of lv2, and then you may load your plugin in your favorite host.
 
