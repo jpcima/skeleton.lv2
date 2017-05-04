@@ -82,12 +82,12 @@ bool UI::idle() {
   if (!vg)
     return false;
 
+  puglEnterContext(view);
   if (P->needs_redraw) {
-    puglEnterContext(view);
     P->draw_nvg();
-    puglLeaveContext(view, true);
     P->needs_redraw = false;
   }
+  puglLeaveContext(view, true);
   return true;
 }
 
