@@ -8,41 +8,45 @@ configure_file(
   "${PROJECT_SOURCE_DIR}/project.h.in"
   "${PROJECT_SOURCE_DIR}/sources/meta/project.h")
 
-add_executable(makelv2manifest tools/makelv2manifest.cc)
-if(CMAKE_SYSTEM_NAME MATCHES "Linux")
-  target_link_libraries(makelv2manifest dl)
+if(NOT CMAKE_CROSSCOMPILING)
+  add_executable(makelv2manifest tools/makelv2manifest.cc)
+  if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    target_link_libraries(makelv2manifest dl)
+  endif()
 endif()
 
 macro(add_lv2_fx name)
-add_library(${name} MODULE
-  ${ARGN}
-  "${PROJECT_SOURCE_DIR}/sources/framework/lv2manifest.cc"
-  "${PROJECT_SOURCE_DIR}/sources/framework/lv2plugin.cc")
-set_target_properties(${name} PROPERTIES
-  PREFIX "" SUFFIX ".fx"
-  LIBRARY_OUTPUT_NAME "${PROJECT_NAME}"
-  LIBRARY_OUTPUT_DIRECTORY "lv2/${PROJECT_NAME}.lv2"
-  CXX_VISIBILITY_PRESET "hidden")
-add_custom_target(${name}-manifest ALL
-  makelv2manifest $<TARGET_FILE:${name}>
-  "${CMAKE_CURRENT_BINARY_DIR}/lv2/${PROJECT_NAME}.lv2")
-target_include_directories(${name}
-  PRIVATE ${LV2_INCLUDE_DIRS}
-  PRIVATE "${Boost_INCLUDE_DIR}")
+  add_library(${name} MODULE
+    ${ARGN}
+    "${PROJECT_SOURCE_DIR}/sources/framework/lv2manifest.cc"
+    "${PROJECT_SOURCE_DIR}/sources/framework/lv2plugin.cc")
+  set_target_properties(${name} PROPERTIES
+    PREFIX "" SUFFIX ".fx"
+    LIBRARY_OUTPUT_NAME "${PROJECT_NAME}"
+    LIBRARY_OUTPUT_DIRECTORY "lv2/${PROJECT_NAME}.lv2"
+    CXX_VISIBILITY_PRESET "hidden")
+  if(NOT CMAKE_CROSSCOMPILING)
+    add_custom_target(${name}-manifest ALL
+      makelv2manifest $<TARGET_FILE:${name}>
+      "${CMAKE_CURRENT_BINARY_DIR}/lv2/${PROJECT_NAME}.lv2")
+  endif()
+  target_include_directories(${name}
+    PRIVATE ${LV2_INCLUDE_DIRS}
+    PRIVATE "${Boost_INCLUDE_DIR}")
 endmacro()
 
 macro(add_lv2_ui name)
-add_library(${name} MODULE
-  ${ARGN}
-  "${PROJECT_SOURCE_DIR}/sources/framework/lv2ui.cc")
-set_target_properties(${name} PROPERTIES
-  PREFIX "" SUFFIX ".ui"
-  LIBRARY_OUTPUT_NAME "${PROJECT_NAME}"
-  LIBRARY_OUTPUT_DIRECTORY "lv2/${PROJECT_NAME}.lv2"
-  CXX_VISIBILITY_PRESET "hidden")
-target_include_directories(${name}
-  PRIVATE ${LV2_INCLUDE_DIRS}
-  PRIVATE "${Boost_INCLUDE_DIR}")
+  add_library(${name} MODULE
+    ${ARGN}
+    "${PROJECT_SOURCE_DIR}/sources/framework/lv2ui.cc")
+  set_target_properties(${name} PROPERTIES
+    PREFIX "" SUFFIX ".ui"
+    LIBRARY_OUTPUT_NAME "${PROJECT_NAME}"
+    LIBRARY_OUTPUT_DIRECTORY "lv2/${PROJECT_NAME}.lv2"
+    CXX_VISIBILITY_PRESET "hidden")
+  target_include_directories(${name}
+    PRIVATE ${LV2_INCLUDE_DIRS}
+    PRIVATE "${Boost_INCLUDE_DIR}")
 endmacro()
 
 macro(add_lv2_qt5ui name)
@@ -75,13 +79,14 @@ endmacro()
 
 macro(add_lv2_glui name)
   include(TargetPugl)
+  find_package(GLEW REQUIRED)
   add_lv2_ui(${name} ${ARGN})
-  target_link_libraries(${name} pugl)
+  target_include_directories(${name} PRIVATE ${GLEW_INCLUDE_DIRS})
+  target_link_libraries(${name} pugl ${GLEW_LIBRARIES})
 endmacro()
 
 macro(add_lv2_nvgui name)
   include(TargetNanoVG)
-  include(TargetPugl)
-  add_lv2_ui(${name} ${ARGN})
-  target_link_libraries(${name} nanovg pugl)
+  add_lv2_glui(${name} ${ARGN})
+  target_link_libraries(${name} nanovg)
 endmacro()

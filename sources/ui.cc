@@ -1,5 +1,6 @@
 #include "framework/ui.h"
 #include "meta/project.h"
+#include <GL/glew.h>
 #include <pugl/gl.h>
 #include <pugl/pugl.h>
 #include <nanovg.h>
@@ -144,6 +145,11 @@ void UI::Impl::handle_event(const PuglEvent *event) {
 #include "../resources/Roboto-Bold.ttf.c"
 
 void UI::Impl::init_nvg() {
+  if (glewInit() != GLEW_OK) {
+    std::cerr << "error initializing GLEW\n";
+    return;
+  }
+
   NVGcontext *vg = this->vg = nvgCreateGL2(NVG_ANTIALIAS|NVG_STENCIL_STROKES);
   if (!vg) {
     std::cerr << "error creating a NanoVG context\n";

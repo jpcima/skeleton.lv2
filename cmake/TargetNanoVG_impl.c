@@ -2,6 +2,10 @@
 #  include <windows.h>
 # endif
 
+#if defined(NANOVG_GLEW)
+# include <GL/glew.h>
+#endif
+
 #if defined(__APPLE__)
 # include <OpenGL/gl.h>
 # include <OpenGL/glext.h>

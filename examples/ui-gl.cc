@@ -1,5 +1,6 @@
 #include "framework/ui.h"
 #include "meta/project.h"
+#include <GL/glew.h>
 #include <pugl/gl.h>
 #include <pugl/pugl.h>
 #include <boost/scope_exit.hpp>
@@ -13,6 +14,7 @@ struct UI::Impl {
   PuglNativeWindow widget = 0;
   bool exposed = false;
   bool initialized_gl = false;
+  bool ok_gl = false;
   void create_widget();
   void handle_event(const PuglEvent *event);
   void init_gl();
@@ -59,15 +61,20 @@ bool UI::idle() {
 
   puglProcessEvents(view);
 
-  puglEnterContext(view);
-
   if (!P->initialized_gl) {
+    puglEnterContext(view);
     P->init_gl();
     P->initialized_gl = true;
+    puglLeaveContext(view, false);
   }
-  P->draw_gl();
 
+  if (!P->ok_gl)
+    return false;
+
+  puglEnterContext(view);
+  P->draw_gl();
   puglLeaveContext(view, true);
+
   return P->exposed;
 }
 
@@ -122,8 +129,15 @@ void UI::Impl::handle_event(const PuglEvent *event) {
 }
 
 void UI::Impl::init_gl() {
+  if (glewInit() != GLEW_OK) {
+    std::cerr << "error initializing GLEW\n";
+    return;
+  }
+
   glClearColor(0, 0, 0, 0);
   glViewport(0, 0, Impl::width, Impl::height);
+
+  this->ok_gl = true;
 }
 
 void UI::Impl::draw_gl() {

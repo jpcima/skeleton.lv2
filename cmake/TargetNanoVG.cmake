@@ -2,6 +2,7 @@ set(NANOVG_SOURCE_DIR
   "${PROJECT_SOURCE_DIR}/thirdparty/nanovg")
 
 option(NANOVG_USE_FREETYPE "Whether NanoVG should use Freetype" OFF)
+option(NANOVG_USE_GLEW "Whether NanoVG should use GLEW" ON)
 
 if(NOT NANOVG_GL_VERSION)
   set(NANOVG_GL_VERSION "GL2" CACHE STRING "OpenGL version for NanoVG")
@@ -31,6 +32,13 @@ if(NANOVG_USE_FREETYPE)
   target_compile_definitions(nanovg PRIVATE "FONS_USE_FREETYPE=1")
   target_include_directories(nanovg PRIVATE ${FREETYPE_INCLUDE_DIRS})
   target_link_libraries(nanovg ${FREETYPE_LIBRARIES})
+endif()
+
+if(NANOVG_USE_GLEW)
+  find_package(GLEW REQUIRED)
+  target_compile_definitions(nanovg PRIVATE "NANOVG_GLEW=1")
+  target_include_directories(nanovg PRIVATE ${GLEW_INCLUDE_DIRS})
+  target_link_libraries(nanovg ${GLEW_LIBRARIES})
 endif()
 
 set_target_properties(nanovg PROPERTIES
