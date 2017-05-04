@@ -28,13 +28,26 @@ The source hierarchy is simple, and it has initially 3 source files for the prog
 - **sources/effect.cc** - this is the audio effect
 - **sources/ui.cc** - this is the GUI
 
-The plugin can be associated with many kinds of graphical UIs: Gtk2, Gtk3, Qt4, Qt5, OpenGL, or none.
-
-If you use OpenGL, make sure to also check out David Robillard's [Pugl](https://drobilla.net/software/pugl), a submodule of this framework.
-You will find two UI examples with OpenGL, a basic one and an elaborate one based on [NanoVG](https://github.com/memononen/nanovg).
-
 Once compiled, you will find a lv2 directory structure inside the build directory.
 Add this directory to the search path of lv2, and then you may load your plugin in your favorite host.
 
     export LV2_PATH="`pwd`/build/lv2"
     jalv.gtk 'urn:jpcima:lv2-example'
+
+## Programming UI
+
+The plugin can be associated with many kinds of graphical UIs: Gtk2, Gtk3, Qt4, Qt5, OpenGL, or none.
+
+If you use OpenGL, make sure to also check out David Robillard's [Pugl](https://drobilla.net/software/pugl), a submodule of this framework.
+You will find two UI examples with OpenGL, a basic one and an elaborate one based on [NanoVG](https://github.com/memononen/nanovg).
+
+The CMake build environment of this project provides a set of macros to add LV2 UI targets.
+These macros offer similar semantics to `add_library(ui MODULE ...)`.
+They link the dependencies and rename the target according to LV2 conventions.
+
+    add_lv2_qt5ui   # Qt 5
+    add_lv2_qt4ui   # Qt 4
+    add_lv2_gtk3ui  # Gtk+ 3
+    add_lv2_gtk2ui  # Gtk+ 2
+    add_lv2_glui    # OpenGL
+    add_lv2_nvgui   # OpenGL with NanoVG
