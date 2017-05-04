@@ -32,4 +32,4 @@ Once compiled, you will find a lv2 directory structure inside the build director
 Add this directory to the search path of lv2, and then you may load your plugin in your favorite host.
 
     export LV2_PATH="`pwd`/build/lv2"
-    jalv.qt5 'urn:jpcima:lv2-example#fx'
+    jalv.qt5 'urn:jpcima:lv2-example'

@@ -1,5 +1,4 @@
 #include "framework/description.h"
-#include "framework/ui.h"
 #include "framework/lv2all.h"
 
 static EffectManifest create_effect_manifest() {

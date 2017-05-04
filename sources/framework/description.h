@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-static constexpr char effect_uri[] = PROJECT_URI "#fx";
+static constexpr char effect_uri[] = PROJECT_URI;
 static constexpr char effect_binary_file[] = PROJECT_NAME ".fx";
 
 static constexpr char ui_uri[] = PROJECT_URI "#ui";
