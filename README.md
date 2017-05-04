@@ -29,7 +29,9 @@ The source hierarchy is simple, and it has initially 3 source files for the prog
 - **sources/ui.cc** - this is the GUI
 
 The plugin can be associated with many kinds of graphical UIs: Gtk2, Gtk3, Qt4, Qt5, OpenGL, or none.
+
 If you use OpenGL, make sure to also check out David Robillard's [Pugl](https://drobilla.net/software/pugl), a submodule of this framework.
+You will find two UI examples with OpenGL, a basic one and an elaborate one based on [NanoVG](https://github.com/memononen/nanovg).
 
 Once compiled, you will find a lv2 directory structure inside the build directory.
 Add this directory to the search path of lv2, and then you may load your plugin in your favorite host.
