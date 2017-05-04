@@ -5,6 +5,10 @@ Quick-start template for LV2 plugins with GUI
 
 This is a project template for starting the development of LV2 plugins.
 
+It is intended for rapid development of LV2 plugins for any purpose.
+A developer simply has to fork this project and start programming in it.
+It is small and simple enough that it is easy to to understand and extend in case of need.
+
 Using this template, the programmer does not have to write plugin metadata (.ttl).
 Instead, the metadata is defined in C++ source code, and the introspection with the
 help of build system produces ttl files automatically.
@@ -33,6 +37,14 @@ Add this directory to the search path of lv2, and then you may load your plugin 
 
     export LV2_PATH="`pwd`/build/lv2"
     jalv.gtk 'urn:jpcima:lv2-example'
+
+## First steps
+
+Edit the project's identifier, display name, and URI. This information is located at the top of **CMakeLists.txt**, and reflects the information which will be built into the plugin.
+
+The metadata of the plugin should be constructed in **description.cc**. The corresponding data structures have their definitions in **framework/description.h** and they match a subset of the [LV2 plugin specification](http://lv2plug.in/ns/lv2core/lv2core.html).
+
+The project comes with a default manifest which could describe a stereo synthesizer with MIDI input.
 
 ## Programming UI
 
