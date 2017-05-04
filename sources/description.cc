@@ -41,15 +41,7 @@ static boost::optional<UIManifest> create_ui_manifest() {
   m.uri = ui_uri;
 
   // [!!!IMPORTANT!!!] set UI class
-#if defined(__APPLE__)
-  m.uiclass = LV2_UI__CocoaUI;
-#elif defined(_WIN32)
-  m.uiclass = LV2_UI__WindowsUI;
-#elif defined(__unix__)
-  m.uiclass = LV2_UI__X11UI;
-#else
-# error unknown UI type for this platform
-#endif
+  m.uiclass = LV2_UI__PlatformSpecificUI;
 
   // request features
   m.features.push_back(FeatureRequest{LV2_URID__map, RequiredFeature::Yes});
