@@ -16,6 +16,14 @@ int main(int argc, char *argv[]) {
   std::string inputfile = argv[1];
   std::string outputdir = argv[2];
 
+  if (inputfile.empty() || outputdir.empty())
+    return 1;
+
+#if !defined(_WIN32)
+  if (inputfile.front() != '/')
+    inputfile = "./" + inputfile;
+#endif
+
 #if defined(_WIN32)
   HMODULE dlh = LoadLibraryA(inputfile.c_str());
 #else
@@ -33,7 +41,8 @@ int main(int argc, char *argv[]) {
   if (!fn)
     throw std::runtime_error("cannot find the entry function");
 
-  fn(outputdir.c_str());
+  if (!fn(outputdir.c_str()))
+    throw std::runtime_error("error writing the manifest");
 
   return 0;
 }
