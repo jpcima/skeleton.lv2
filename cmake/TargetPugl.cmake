@@ -2,8 +2,10 @@ set(PUGL_SOURCE_DIR
   "${PROJECT_SOURCE_DIR}/thirdparty/pugl")
 
 if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+  find_library(COCOA_LIBRARY Cocoa)
   add_library(pugl STATIC
     "${PUGL_SOURCE_DIR}/pugl/pugl_osx.m")
+  target_link_libraries(pugl "${COCOA_LIBRARY}")
 elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
   add_library(pugl STATIC
     "${PUGL_SOURCE_DIR}/pugl/pugl_win.cpp")
