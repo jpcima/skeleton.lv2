@@ -33,7 +33,7 @@ macro(add_lv2_fx name)
   endif()
   target_include_directories(${name}
     PRIVATE ${LV2_INCLUDE_DIRS}
-    PRIVATE "${Boost_INCLUDE_DIR}")
+    PRIVATE ${Boost_INCLUDE_DIRS})
 endmacro()
 
 macro(add_lv2_ui name)
@@ -48,7 +48,7 @@ macro(add_lv2_ui name)
     CXX_VISIBILITY_PRESET "hidden")
   target_include_directories(${name}
     PRIVATE ${LV2_INCLUDE_DIRS}
-    PRIVATE "${Boost_INCLUDE_DIR}")
+    PRIVATE ${Boost_INCLUDE_DIRS})
 endmacro()
 
 macro(add_lv2_qt5ui name)
