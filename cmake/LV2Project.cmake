@@ -1,4 +1,9 @@
 
+if(ENABLE_PROFILER)
+  include(FindPkgConfig)
+  pkg_check_modules(PROFILER REQUIRED libprofiler)
+endif()
+
 if(IS_DIRECTORY "${PROJECT_SOURCE_DIR}/thirdparty/lv2")
   message(STATUS "Using bundled LV2")
   set(LV2_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/thirdparty/lv2")
@@ -44,6 +49,10 @@ macro(add_lv2_fx name)
   target_include_directories(${name}
     PRIVATE ${LV2_INCLUDE_DIRS}
     PRIVATE ${Boost_INCLUDE_DIRS})
+  if(ENABLE_PROFILER)
+    target_include_directories(${name} PRIVATE ${PROFILER_INCLUDE_DIRS})
+    target_link_libraries(${name} ${PROFILER_LIBRARIES})
+  endif()
 endmacro()
 
 macro(add_lv2_ui name)
@@ -59,6 +68,10 @@ macro(add_lv2_ui name)
   target_include_directories(${name}
     PRIVATE ${LV2_INCLUDE_DIRS}
     PRIVATE ${Boost_INCLUDE_DIRS})
+  if(ENABLE_PROFILER)
+    target_include_directories(${name} PRIVATE ${PROFILER_INCLUDE_DIRS})
+    target_link_libraries(${name} ${PROFILER_LIBRARIES})
+  endif()
 endmacro()
 
 macro(add_lv2_qt5ui name)
@@ -110,4 +123,16 @@ macro(add_lv2_nvgui name)
   include(TargetNanoVG)
   add_lv2_glui(${name} ${ARGN})
   target_link_libraries(${name} nanovg)
+endmacro()
+
+macro(add_lv2_tkui name)
+  find_package(TCL)
+  if(NOT TCLTK_FOUND)
+    message(FATAL_ERROR "Tcl/Tk could not be found")
+  endif()
+  add_lv2_ui(${name} ${ARGN})
+  target_include_directories(${name}
+    PRIVATE "${TCL_INCLUDE_PATH}"
+    PRIVATE "${TK_INCLUDE_PATH}")
+  target_link_libraries(${name} "${TCL_LIBRARY}" "${TK_LIBRARY}")
 endmacro()
