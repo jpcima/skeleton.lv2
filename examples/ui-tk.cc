@@ -2,9 +2,7 @@
 #include "meta/project.h"
 #include <tcl.h>
 #include <tk.h>
-#include <boost/lexical_cast.hpp>
 #include <boost/scope_exit.hpp>
-#include <sstream>
 #include <iostream>
 
 struct UI::Impl {
@@ -85,14 +83,13 @@ void UI::Impl::create_widget() {
     "-geometry", std::to_string(Impl::width) + 'x' + std::to_string(Impl::height)};
   Impl::tk_init(argv, sizeof(argv) / sizeof(argv[0]));
 
-  if (Tcl_Eval(interp, "winfo id .") != TCL_OK)
-    throw std::runtime_error("error identifying the Tk root window");
-  uintptr_t widget {};
-  std::istringstream(Tcl_GetStringResult(interp)) >> widget;
+  Tk_Window main_window = Tk_MainWindow(interp);
+  Tk_MakeWindowExist(main_window);
+  uintptr_t window_id = Tk_WindowId(main_window);
 
   Impl::tk_exec();
 
-  this->widget = reinterpret_cast<void *>(widget);
+  this->widget = reinterpret_cast<void *>(window_id);
   success = true;
 }
 
