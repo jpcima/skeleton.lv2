@@ -1,14 +1,18 @@
 
-include(FindPkgConfig)
-
 if(IS_DIRECTORY "${PROJECT_SOURCE_DIR}/thirdparty/lv2")
   message(STATUS "Using bundled LV2")
   set(LV2_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/thirdparty/lv2")
 else()
+  include(FindPkgConfig)
   pkg_check_modules(LV2 lv2 REQUIRED)
 endif()
 
-find_package(Boost REQUIRED)
+if(IS_DIRECTORY "${PROJECT_SOURCE_DIR}/thirdparty/boost")
+  message(STATUS "Using bundled Boost")
+  set(Boost_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/thirdparty/boost")
+else()
+  find_package(Boost REQUIRED)
+endif()
 
 configure_file(
   "${PROJECT_SOURCE_DIR}/project.h.in"
