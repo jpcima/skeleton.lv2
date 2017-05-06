@@ -4,6 +4,7 @@
 #include <pugl/gl.h>
 #include <pugl/pugl.h>
 #include <boost/scope_exit.hpp>
+#include <stdexcept>
 #include <iostream>
 
 struct UI::Impl {
@@ -87,10 +88,8 @@ void UI::Impl::create_widget() {
   char *pugl_argv[] = {pugl_arg0, nullptr};
 
   PuglView *view = puglInit(&pugl_argc, pugl_argv);
-  if (!view) {
-    std::cerr << "error creating a Pugl view\n";
-    return;
-  }
+  if (!view)
+    throw std::runtime_error("error creating a Pugl view");
 
   BOOST_SCOPE_EXIT(&success, view) {
     if (!success)
@@ -106,10 +105,8 @@ void UI::Impl::create_widget() {
   puglInitResizable(view, false);
   puglInitContextType(view, PUGL_GL);
 
-  if (puglCreateWindow(view, PROJECT_DISPLAY_NAME) != 0) {
-    std::cerr << "error creating a Pugl window\n";
-    return;
-  }
+  if (puglCreateWindow(view, PROJECT_DISPLAY_NAME) != 0)
+    throw std::runtime_error("error creating a Pugl window");
 
   puglShowWindow(view);
   puglProcessEvents(view);
