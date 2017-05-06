@@ -64,7 +64,7 @@ void UI::Impl::create_widget() {
 
   Tcl_Interp *interp = Tcl_CreateInterp();
   if (!interp)
-    throw std::runtime_error("error creating the Tcl interpreter");
+    throw std::runtime_error("error creating the Tcl interpreter\n");
   this->interp = interp;
 
   BOOST_SCOPE_EXIT(&success, this_, interp) {
@@ -111,9 +111,9 @@ void UI::Impl::tk_init(const std::string *args, unsigned count) {
 
   // initialize Tcl and Tk
   if (Tcl_Init(interp) == TCL_ERROR)
-    throw std::runtime_error("error initializing Tcl");
+    throw std::runtime_error("error initializing Tcl\n");
   if (Tk_Init(interp) == TCL_ERROR)
-    throw std::runtime_error("error initializing Tk");
+    throw std::runtime_error("error initializing Tk\n");
   Tcl_StaticPackage(interp, "Tk", Tk_Init, Tk_SafeInit);
 }
 

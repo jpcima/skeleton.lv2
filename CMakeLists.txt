@@ -6,6 +6,8 @@ set(PROJECT_URI "urn:jpcima:lv2-example")
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
+option(ENABLE_PROFILER "Enable the profiler library" OFF)
+
 include(CXXStandard)
 include(CXXWarnings)
 include(LV2Project)
@@ -20,5 +22,5 @@ add_lv2_fx(fx
 #===============================================================================
 # LV2 GUI target
 #===============================================================================
-add_lv2_nvgui(ui
+add_lv2_tkui(ui
   sources/ui.cc)
