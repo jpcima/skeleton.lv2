@@ -1,6 +1,6 @@
-[submodule "thirdparty/pugl"]
-	path = thirdparty/pugl
-	url = http://git.drobilla.net/pugl.git/
 [submodule "thirdparty/nanovg"]
 	path = thirdparty/nanovg
 	url = https://github.com/memononen/nanovg.git
+[submodule "thirdparty/pugl"]
+	path = thirdparty/pugl
+	url = https://github.com/jpcima/pugl.git
