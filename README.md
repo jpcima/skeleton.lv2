@@ -48,7 +48,7 @@ The project comes with a default manifest which could describe a stereo synthesi
 
 ## Programming UI
 
-The plugin can be associated with many kinds of graphical UIs: Gtk2, Gtk3, Qt4, Qt5, OpenGL, or none.
+The plugin can be associated with many kinds of graphical UIs: Gtk2, Gtk3, Qt4, Qt5, OpenGL, Tk, or none.
 
 If you use OpenGL, make sure to also check out David Robillard's [Pugl](https://drobilla.net/software/pugl), a submodule of this framework.
 You will find two UI examples with OpenGL, a basic one and an elaborate one based on [NanoVG](https://github.com/memononen/nanovg).
@@ -63,6 +63,7 @@ They link the dependencies and rename the target according to LV2 conventions.
     add_lv2_gtk2ui  # Gtk+ 2
     add_lv2_glui    # OpenGL
     add_lv2_nvgui   # OpenGL with NanoVG
+    add_lv2_tkui    # Tcl/Tk
 
 In the manifest of your UI, you want to make sure that its **uiclass** matches the UI toolkit used.
 If you develop with OpenGL or native toolkits, use **LV2_UI__PlatformSpecificUI** which is defined as a synonym for the platform's native window system.
