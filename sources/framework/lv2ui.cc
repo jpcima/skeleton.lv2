@@ -36,11 +36,12 @@ static LV2UI_Handle instantiate(const LV2UI_Descriptor *descriptor,
   std::unique_ptr<UI> ui;
   try {
     ui.reset(new UI(parent, map, unmap));
+    *widget = ui->widget();
     if (resize)
       resize->ui_resize(resize->handle, UI::width(), UI::height());
-    *widget = ui->widget();
   } catch (std::exception &ex) {
     std::cerr << "error instanciating: " << ex.what() << "\n";
+    *widget = nullptr;
     return nullptr;
   }
   return ui.release();
