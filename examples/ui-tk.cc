@@ -14,6 +14,8 @@ struct UI::Impl {
   void create_widget();
   void tk_init(const std::string *args, unsigned count);
   void tk_exec();
+  static uintptr_t find_widget(Tcl_Interp *interp, uintptr_t parent);
+  static uintptr_t parent_window(Display *dpy, uintptr_t w);
 };
 
 //==============================================================================
@@ -83,13 +85,14 @@ void UI::Impl::create_widget() {
     "-geometry", std::to_string(Impl::width) + 'x' + std::to_string(Impl::height)};
   Impl::tk_init(argv, sizeof(argv) / sizeof(argv[0]));
 
-  Tk_Window main_window = Tk_MainWindow(interp);
-  Tk_MakeWindowExist(main_window);
-  uintptr_t window_id = Tk_WindowId(main_window);
-
   Impl::tk_exec();
 
-  this->widget = reinterpret_cast<void *>(window_id);
+  // do some events, to make Tk create the wrapper window we need.
+  while (Tcl_DoOneEvent(TCL_DONT_WAIT)) {}
+  // Tk does not give us the window LV2 wants, go up and search for it.
+  uintptr_t widget_id = find_widget(interp, parent);
+
+  this->widget = reinterpret_cast<void *>(widget_id);
   success = true;
 }
 
@@ -128,4 +131,33 @@ void UI::Impl::tk_exec() {
       std::cerr << Tcl_GetStringResult(interp) << "\n";
     throw std::runtime_error("error executing the Tk program");
   }
+}
+
+uintptr_t UI::Impl::find_widget(Tcl_Interp *interp, uintptr_t parent) {
+  Tk_Window main_window = Tk_MainWindow(interp);
+  Tk_MakeWindowExist(main_window);
+  Display *dpy = Tk_Display(main_window);
+  uintptr_t window_id = Tk_WindowId(main_window);
+  uintptr_t widget_id = window_id;
+  for (uintptr_t p {}; widget_id &&
+           (p = Impl::parent_window(dpy, widget_id)) != parent;)
+    widget_id = p;
+  if (!widget_id)
+    widget_id = window_id;
+  return widget_id;
+}
+
+uintptr_t UI::Impl::parent_window(Display *dpy, uintptr_t w) {
+#if defined(_WIN32)
+    return uintptr_t(GetParent(HWND(w)))
+#elif defined(__unix__) && !defined(__APPLE__)
+    Window r {}, p {};
+    Window *c {};
+    unsigned nc {};
+    XQueryTree(dpy, w, &r, &p, &c, &nc);
+    XFree(c);
+    return p;
+#else
+# error Tk on Mac OS is not implemented
+#endif
 }
