@@ -53,6 +53,7 @@ macro(add_lv2_fx name)
     target_include_directories(${name} PRIVATE ${PROFILER_INCLUDE_DIRS})
     target_link_libraries(${name} ${PROFILER_LIBRARIES})
   endif()
+  install(DIRECTORY "${PROJECT_BINARY_DIR}/lv2" DESTINATION "lib")
 endmacro()
 
 macro(add_lv2_ui name)
