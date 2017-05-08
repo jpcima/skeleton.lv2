@@ -2,6 +2,9 @@
 #include "meta/project.h"
 #include <tcl.h>
 #include <tk.h>
+#if defined(_WIN32)
+# include <tkWin.h>
+#endif
 #include <boost/scope_exit.hpp>
 #include <iostream>
 
@@ -149,7 +152,7 @@ uintptr_t UI::Impl::find_widget(Tcl_Interp *interp, uintptr_t parent) {
 
 uintptr_t UI::Impl::parent_window(Display *dpy, uintptr_t w) {
 #if defined(_WIN32)
-    return uintptr_t(GetParent(HWND(w)))
+    return uintptr_t(GetParent(HWND(w)));
 #elif defined(__unix__) && !defined(__APPLE__)
     Window r {}, p {};
     Window *c {};
