@@ -1,44 +1,35 @@
 #include "framework/ui.h"
 #include "meta/project.h"
-#include <GL/glew.h>
-#include <pugl/gl.h>
-#include <pugl/pugl.h>
-#include <nanovg.h>
-#include <nanovg_gl.h>
+#include <tcl.h>
+#include <tk.h>
+#if defined(_WIN32)
+# include <tkWin.h>
+#endif
 #include <boost/scope_exit.hpp>
-#include <stdexcept>
 #include <iostream>
-#include <cmath>
 
 struct UI::Impl {
   static constexpr unsigned width = 600;
   static constexpr unsigned height = 400;
-  PuglView *view {};
-  PuglNativeWindow parent = 0;
-  PuglNativeWindow widget = 0;
-  NVGcontext *vg {};
-  bool exposed = false;
-  bool initialized_nvg = false;
-  bool needs_redraw = true;
+  Tcl_Interp *interp = nullptr;
+  void *widget = nullptr;
+  void *parent = nullptr;
   void create_widget();
-  void handle_event(const PuglEvent *event);
-  void init_nvg();
-  void draw_nvg();
-  void update();
-  static void print_gl_info(std::ostream &os);
+  void tk_init(const std::string *args, unsigned count);
+  void tk_exec();
+  static uintptr_t find_widget(Tcl_Interp *interp, uintptr_t parent);
+  static uintptr_t parent_window(Display *dpy, uintptr_t w);
 };
 
 //==============================================================================
 UI::UI(void *parent, LV2_URID_Map *map, LV2_URID_Unmap *unmap)
     : P(new Impl) {
-  P->parent = PuglNativeWindow(parent);
+  P->parent = parent;
 }
 
 UI::~UI() {
-  if (P->vg)
-    nvgDeleteGL2(P->vg);
-  if (P->view)
-    puglDestroy(P->view);
+  Tcl_DeleteInterp(P->interp);
+  Tcl_Release(P->interp);
 }
 
 LV2UI_Widget UI::widget() const {
@@ -64,31 +55,7 @@ bool UI::needs_idle_callback() {
 }
 
 bool UI::idle() {
-  PuglView *view = P->view;
-  if (!view)
-    return false;
-
-  puglProcessEvents(view);
-  if (!P->exposed)
-    return false;
-
-  if (!P->initialized_nvg) {
-    puglEnterContext(view);
-    P->init_nvg();
-    P->initialized_nvg = true;
-    puglLeaveContext(view, false);
-  }
-
-  NVGcontext *vg = P->vg;
-  if (!vg)
-    return false;
-
-  if (P->needs_redraw) {
-    puglEnterContext(view);
-    P->draw_nvg();
-    puglLeaveContext(view, true);
-    P->needs_redraw = false;
-  }
+  while (Tcl_DoOneEvent(TCL_DONT_WAIT)) {}
   return true;
 }
 
@@ -96,168 +63,104 @@ bool UI::idle() {
 void UI::Impl::create_widget() {
   bool success = false;
 
-  int pugl_argc = 1;
-  char pugl_arg0[] = "pugl";
-  char *pugl_argv[] = {pugl_arg0, nullptr};
+  const uintptr_t parent = reinterpret_cast<uintptr_t>(this->parent);
 
-  PuglView *view = puglInit(&pugl_argc, pugl_argv);
-  if (!view)
-    throw std::runtime_error("error creating a Pugl view");
+  Tcl_Interp *interp = Tcl_CreateInterp();
+  if (!interp)
+    throw std::runtime_error("error creating the Tcl interpreter\n");
+  this->interp = interp;
 
-  BOOST_SCOPE_EXIT(&success, view) {
-    if (!success)
-      puglDestroy(view);
+  BOOST_SCOPE_EXIT(&success, this_, interp) {
+    if (!success) { Tcl_DeleteInterp(interp); this_->interp = nullptr; }
   } BOOST_SCOPE_EXIT_END;
 
-  puglSetHandle(view, this);
-  puglSetEventFunc(view, [](PuglView *view, const PuglEvent *event) {
-    reinterpret_cast<UI::Impl *>(puglGetHandle(view))->handle_event(event); });
+  Tcl_InitMemory(interp);
 
-  puglInitWindowParent(view, this->parent);
-  puglInitWindowSize(view, Impl::width, Impl::height);
-  puglInitResizable(view, false);
-  puglInitContextType(view, PUGL_GL);
+  Tcl_Preserve(interp);
 
-  if (puglCreateWindow(view, PROJECT_DISPLAY_NAME) != 0)
-    throw std::runtime_error("error creating a Pugl window");
+  BOOST_SCOPE_EXIT(&success, interp) {
+    if (!success) Tcl_Release(interp);
+  } BOOST_SCOPE_EXIT_END;
 
-  puglShowWindow(view);
-  puglProcessEvents(view);
+  const std::string argv[] = {
+    PROJECT_NAME,
+    "-use", std::to_string(parent),
+    "-geometry", std::to_string(Impl::width) + 'x' + std::to_string(Impl::height)};
+  Impl::tk_init(argv, sizeof(argv) / sizeof(argv[0]));
 
-  this->view = view;
-  this->widget = puglGetNativeWindow(view);
+  Impl::tk_exec();
+
+  // do some events, to make Tk create the wrapper window we need.
+  while (Tcl_DoOneEvent(TCL_DONT_WAIT)) {}
+  // Tk does not give us the window LV2 wants, go up and search for it.
+  uintptr_t widget_id = find_widget(interp, parent);
+
+  this->widget = reinterpret_cast<void *>(widget_id);
   success = true;
 }
 
-void UI::Impl::handle_event(const PuglEvent *event) {
-  switch (event->type) {
-    case PUGL_EXPOSE: this->exposed = true; this->needs_redraw = true; break;
-    case PUGL_CLOSE: this->exposed = false; break;
-    // handle other events here, invoke update() to make the screen redraw
-    default: break;
+void UI::Impl::tk_init(const std::string *args, unsigned count) {
+  Tcl_Interp *interp = this->interp;
+
+  // pass arguments to the wish interpreter
+  Tcl_SetVar2Ex(interp, "argc", nullptr, Tcl_NewIntObj(count), TCL_GLOBAL_ONLY);
+  Tcl_SetVar(interp, "argv0", args[0].c_str(), TCL_GLOBAL_ONLY);
+  Tcl_Obj *argv_obj = Tcl_NewListObj(0, nullptr);
+  for (unsigned i = 0; i < count; ++i) {
+    Tcl_Obj *arg_obj = Tcl_NewStringObj(args[i].data(), args[i].size());
+    Tcl_ListObjAppendElement(interp, argv_obj, arg_obj);
+  }
+  Tcl_SetVar2Ex(interp, "argv", NULL, argv_obj, TCL_GLOBAL_ONLY);
+
+  // initialize Tcl and Tk
+  if (Tcl_Init(interp) == TCL_ERROR)
+    throw std::runtime_error("error initializing Tcl\n");
+  if (Tk_Init(interp) == TCL_ERROR)
+    throw std::runtime_error("error initializing Tk\n");
+  Tcl_StaticPackage(interp, "Tk", Tk_Init, Tk_SafeInit);
+}
+
+void UI::Impl::tk_exec() {
+  Tcl_Interp *interp = this->interp;
+
+  // run your Tcl script here
+  std::string script =
+      "button .hello -text {Hello, World!}\n"
+      "pack .hello\n";
+  int ret = Tcl_Eval(interp, script.c_str());
+
+  if (ret != TCL_OK) {
+    if (ret == TCL_ERROR)
+      std::cerr << Tcl_GetStringResult(interp) << "\n";
+    throw std::runtime_error("error executing the Tk program");
   }
 }
 
-#include "../resources/Roboto-Regular.ttf.c"
-#include "../resources/Roboto-Bold.ttf.c"
-
-void UI::Impl::init_nvg() {
-  if (glewInit() != GLEW_OK) {
-    std::cerr << "error initializing GLEW\n";
-    return;
-  }
-
-  NVGcontext *vg = this->vg = nvgCreateGL2(NVG_ANTIALIAS|NVG_STENCIL_STROKES);
-  if (!vg) {
-    std::cerr << "error creating a NanoVG context\n";
-    return;
-  }
-
-  Impl::print_gl_info(std::cerr);
-
-  nvgCreateFontMem(
-      vg, "sans",
-      const_cast<unsigned char *>(Roboto_Regular_ttf), sizeof(Roboto_Regular_ttf),
-      false);
-  nvgCreateFontMem(
-      vg, "sans-bold",
-      const_cast<unsigned char *>(Roboto_Bold_ttf), sizeof(Roboto_Bold_ttf),
-      false);
+uintptr_t UI::Impl::find_widget(Tcl_Interp *interp, uintptr_t parent) {
+  Tk_Window main_window = Tk_MainWindow(interp);
+  Tk_MakeWindowExist(main_window);
+  Display *dpy = Tk_Display(main_window);
+  uintptr_t window_id = Tk_WindowId(main_window);
+  uintptr_t widget_id = window_id;
+  for (uintptr_t p {}; widget_id &&
+           (p = Impl::parent_window(dpy, widget_id)) != parent;)
+    widget_id = p;
+  if (!widget_id)
+    widget_id = window_id;
+  return widget_id;
 }
 
-void UI::Impl::draw_nvg() {
-  glViewport(0, 0, Impl::width, Impl::height);
-  glClearColor(0, 0, 0, 0);
-  glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
-
-  NVGcontext *vg = this->vg;
-  nvgBeginFrame(vg, Impl::width, Impl::height, 1);
-
-  // text drawing example
-  {
-    nvgSave(vg);
-
-    float w = 400, h = 100;
-    float x = (Impl::width - w) / 2, y = 50;
-
-    nvgStrokeColor(vg, nvgRGB(200, 200, 200));
-    nvgFillColor(vg, nvgRGB(100, 100, 100));
-    nvgStrokeWidth(vg, 10);
-
-    nvgBeginPath(vg);
-    nvgRoundedRect(vg, x, y, w, h, 20);
-    nvgFill(vg);
-    nvgStroke(vg);
-
-    nvgFillColor(vg, nvgRGB(200, 200, 200));
-
-    nvgFontSize(vg, 64);
-    nvgFontFace(vg, "sans-bold");
-    nvgTextAlign(vg, NVG_ALIGN_CENTER|NVG_ALIGN_MIDDLE);
-    nvgTextBox(vg, x, y + h / 2, w, "Hello, LV2!", nullptr);
-
-    nvgRestore(vg);
-  }
-
-  // plot drawing example
-  {
-    nvgSave(vg);
-
-    constexpr float pi = M_PI;
-
-    float w = Impl::width * 0.9f, h = 150;
-    float x = (Impl::width - w) / 2, y = 200;
-
-    constexpr unsigned nsamples = 64;
-    float samples[nsamples];
-    float sx[nsamples], sy[nsamples];
-    float dx = w / (nsamples - 1);
-
-    for (unsigned i = 0; i < nsamples; ++i) {
-      float x = 4 * ((2 * i / float(nsamples - 1)) - 1);
-      samples[i] = (x == 0) ? 1 : (std::sin(pi * x) / (pi * x));
-    }
-
-    for (unsigned i = 0; i < nsamples; ++i) {
-      float v = (samples[i] + 0.25f) / 1.25f;
-      sx[i] = x + i * dx;
-      sy[i] = y + h * (1 - v);
-    }
-
-    nvgBeginPath(vg);
-    nvgRect(vg, x - 8, y - 8, w + 16, h + 16);
-    nvgFillColor(vg, nvgRGB(50, 50, 50));
-    nvgFill(vg);
-
-    nvgBeginPath(vg);
-    nvgMoveTo(vg, sx[0], sy[0]);
-    for (unsigned i = 1; i < nsamples; i++)
-      nvgQuadTo(vg, (sx[i] + sx[i-1]) / 2, (sy[i] + sy[i-1]) / 2, sx[i], sy[i]);
-    nvgStrokeColor(vg, nvgRGB(255, 200, 0));
-    nvgStrokeWidth(vg, 3.0f);
-    nvgStroke(vg);
-
-    nvgRestore(vg);
-  }
-
-  nvgEndFrame(vg);
-}
-
-void UI::Impl::update() {
-  this->needs_redraw = true;
-}
-
-void UI::Impl::print_gl_info(std::ostream &os) {
-  static const struct GLInfo {
-    const char *name {};
-    GLenum id;
-  } infos[] = {
-    {"vendor", GL_VENDOR},
-    {"renderer", GL_RENDERER},
-    {"version", GL_VERSION},
-  };
-  for (const GLInfo &info: infos) {
-    const char *data = reinterpret_cast<const char *>(glGetString(info.id));
-    os << "OpenGL " << info.name << ": " << (data ? data : "(unknown)") << "\n";
-  }
+uintptr_t UI::Impl::parent_window(Display *dpy, uintptr_t w) {
+#if defined(_WIN32)
+    return uintptr_t(GetParent(HWND(w)));
+#elif defined(__unix__) && !defined(__APPLE__)
+    Window r {}, p {};
+    Window *c {};
+    unsigned nc {};
+    XQueryTree(dpy, w, &r, &p, &c, &nc);
+    XFree(c);
+    return p;
+#else
+# error Tk on Mac OS is not implemented
+#endif
 }
