@@ -1,37 +1,40 @@
 #include "framework/description.h"
 #include "framework/lv2all.h"
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/ini_parser.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/dll.hpp>
+#include <iostream>
+namespace ptree = boost::property_tree;
+namespace fs = boost::filesystem;
+namespace dll = boost::dll;
 
 static EffectManifest create_effect_manifest() {
   EffectManifest m;
   m.uri = effect_uri;
   m.name = PROJECT_DISPLAY_NAME;
 
-  // set effect categories (superclasses other than lv2:Plugin)
-  m.categories.push_back(LV2_CORE__InstrumentPlugin);
+  // identify the plugin directory
+  fs::path plugin_dir = dll::symbol_location(create_effect_manifest).parent_path();
+  fs::path pd_ini_path = plugin_dir / "pd.ini";
+  std::cerr << "Puredata config: " << pd_ini_path << "\n";
+
+  // load pd.ini and extract info from patch
+  ptree::ptree pd_ini;
+  ptree::ini_parser::read_ini(pd_ini_path.native(), pd_ini);
+
+  fs::path pd_patch_path = plugin_dir / pd_ini.get<std::string>("puredata.patch-file");
+  std::cerr << "Puredata patch: " << pd_patch_path << "\n";
+
+  
+  
 
   // request features
   m.features.push_back(FeatureRequest{LV2_URID__map, RequiredFeature::Yes});
   m.features.push_back(FeatureRequest{LV2_URID__unmap, RequiredFeature::Yes});
 
-  // create audio ports
-  for (unsigned i = 0; i < 2; ++i) {
-    std::unique_ptr<AudioPort> p(new AudioPort);
-    p->direction = PortDirection::Output;
-    p->symbol = "audio_output_" + std::to_string(i + 1);
-    p->name = "Audio output " + std::to_string(i + 1);
-    m.ports.emplace_back(std::move(p));
-  }
-
-  // create event ports
-  {
-    std::unique_ptr<EventPort> p(new EventPort);
-    p->direction = PortDirection::Input;
-    p->symbol = "event_input";
-    p->name = "Event input";
-    p->buffer_type = LV2_ATOM__Sequence;
-    p->supports.push_back(LV2_MIDI__MidiEvent);
-    m.ports.emplace_back(std::move(p));
-  }
+  // TODO puredata ports
+  
 
   return m;
 }
