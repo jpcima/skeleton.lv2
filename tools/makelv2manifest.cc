@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
   if (!dlh)
     throw std::runtime_error("cannot load the library");
 
-  typedef bool (fn_t)(const char *);
+  typedef bool (fn_t)(const char *, bool);
 #if defined(_WIN32)
   fn_t *fn = (fn_t *)GetProcAddress(dlh, "lv2_write_manifest");
 #else
@@ -41,7 +41,8 @@ int main(int argc, char *argv[]) {
   if (!fn)
     throw std::runtime_error("cannot find the entry function");
 
-  if (!fn(outputdir.c_str()))
+  bool single_file = false;
+  if (!fn(outputdir.c_str(), single_file))
     throw std::runtime_error("error writing the manifest");
 
   return 0;
