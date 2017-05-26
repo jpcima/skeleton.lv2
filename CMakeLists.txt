@@ -37,15 +37,13 @@ target_link_libraries(fx
   "${Boost_FILESYSTEM_LIBRARY}"
   "${Boost_SYSTEM_LIBRARY}")
 
-set(PD_INIT_FILE "${PROJECT_SOURCE_DIR}/pd.ini")
-if(NOT EXISTS "${PD_INIT_FILE}")
-  message(FATAL_ERROR "Required file ${PD_INIT_FILE} does not exist")
+include(TargetLibpd)
+target_link_libraries(fx libpd)
+
+set(PD_DATA_DIR "${PROJECT_SOURCE_DIR}/puredata")
+if(NOT EXISTS "${PD_DATA_DIR}/pd.ini")
+  message(FATAL_ERROR "Required file ${PD_DATA_DIR}/pd.ini does not exist")
 endif()
-add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/lv2/${PROJECT_NAME}.lv2/pd.ini"
-  DEPENDS "${PD_INIT_FILE}"
-  COMMAND ${CMAKE_COMMAND} -E copy
-  "${PD_INIT_FILE}"
-  "${CMAKE_CURRENT_BINARY_DIR}/lv2/${PROJECT_NAME}.lv2/pd.ini")
 add_custom_target(pd-ini ALL
-  DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/lv2/${PROJECT_NAME}.lv2/pd.ini")
+  COMMAND "${CMAKE_COMMAND}" -E copy_directory
+  "${PD_DATA_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/lv2/${PROJECT_NAME}.lv2/")
