@@ -6,6 +6,7 @@ set(PROJECT_URI "urn:jpcima:lv2-example")
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
+option(USE_DYN_MANIFEST "Create a dynmanifest plugin" OFF)
 option(ENABLE_PROFILER "Enable the profiler library" OFF)
 
 include(CXXStandard)

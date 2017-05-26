@@ -1,8 +1,11 @@
 
+message("LV2 plugin uses profiler: ${ENABLE_PROFILER}")
 if(ENABLE_PROFILER)
   include(FindPkgConfig)
   pkg_check_modules(PROFILER REQUIRED libprofiler)
 endif()
+
+message("LV2 plugin uses dynamic manifest: ${USE_DYN_MANIFEST}")
 
 if(IS_DIRECTORY "${PROJECT_SOURCE_DIR}/thirdparty/lv2")
   message(STATUS "Using bundled LV2")
@@ -23,7 +26,7 @@ configure_file(
   "${PROJECT_SOURCE_DIR}/project.h.in"
   "${PROJECT_SOURCE_DIR}/sources/meta/project.h")
 
-if(NOT CMAKE_CROSSCOMPILING)
+if(NOT USE_DYN_MANIFEST AND NOT CMAKE_CROSSCOMPILING)
   add_executable(makelv2manifest tools/makelv2manifest.cc)
   if(CMAKE_SYSTEM_NAME MATCHES "Linux")
     target_link_libraries(makelv2manifest dl)
@@ -41,7 +44,15 @@ macro(add_lv2_fx name)
     LIBRARY_OUTPUT_DIRECTORY "lv2/${PROJECT_NAME}.lv2"
     C_VISIBILITY_PRESET "hidden"
     CXX_VISIBILITY_PRESET "hidden")
-  if(NOT CMAKE_CROSSCOMPILING)
+  if(USE_DYN_MANIFEST)
+    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/lv2/${PROJECT_NAME}.lv2/manifest.ttl"
+      "@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .
+@prefix dman: <http://lv2plug.in/ns/ext/dynmanifest#> .
+<${PROJECT_URI}>
+  a dman:DynManifest ;
+  lv2:binary <${PROJECT_NAME}.fx> .
+")
+  elseif(NOT CMAKE_CROSSCOMPILING)
     add_custom_target(${name}-manifest ALL
       makelv2manifest $<TARGET_FILE:${name}>
       "${CMAKE_CURRENT_BINARY_DIR}/lv2/${PROJECT_NAME}.lv2")
