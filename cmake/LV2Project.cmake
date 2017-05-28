@@ -44,6 +44,10 @@ macro(add_lv2_fx name)
     LIBRARY_OUTPUT_DIRECTORY "lv2/${PROJECT_NAME}.lv2"
     C_VISIBILITY_PRESET "hidden"
     CXX_VISIBILITY_PRESET "hidden")
+  if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    set_property(TARGET ${name} APPEND_STRING PROPERTY
+      LINK_FLAGS " -Wl,--no-undefined")
+  endif()
   if(USE_DYN_MANIFEST)
     file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/lv2/${PROJECT_NAME}.lv2/manifest.ttl"
       "@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .
@@ -77,6 +81,10 @@ macro(add_lv2_ui name)
     LIBRARY_OUTPUT_DIRECTORY "lv2/${PROJECT_NAME}.lv2"
     C_VISIBILITY_PRESET "hidden"
     CXX_VISIBILITY_PRESET "hidden")
+  if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    set_property(TARGET ${name} APPEND_STRING PROPERTY
+      LINK_FLAGS " -Wl,--no-undefined")
+  endif()
   target_include_directories(${name}
     PRIVATE ${LV2_INCLUDE_DIRS}
     PRIVATE ${Boost_INCLUDE_DIRS})
@@ -147,4 +155,10 @@ macro(add_lv2_tkui name)
     PRIVATE "${TCL_INCLUDE_PATH}"
     PRIVATE "${TK_INCLUDE_PATH}")
   target_link_libraries(${name} "${TCL_LIBRARY}" "${TK_LIBRARY}")
+  if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+    find_package(X11 REQUIRED)
+    target_include_directories(${name}
+      PRIVATE "${X11_INCLUDE_DIR}")
+    target_link_libraries(${name} "${X11_X11_LIB}")
+  endif()
 endmacro()
