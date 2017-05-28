@@ -155,4 +155,10 @@ macro(add_lv2_tkui name)
     PRIVATE "${TCL_INCLUDE_PATH}"
     PRIVATE "${TK_INCLUDE_PATH}")
   target_link_libraries(${name} "${TCL_LIBRARY}" "${TK_LIBRARY}")
+  if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+    find_package(X11 REQUIRED)
+    target_include_directories(${name}
+      PRIVATE "${X11_INCLUDE_DIR}")
+    target_link_libraries(${name} "${X11_X11_LIB}")
+  endif()
 endmacro()
