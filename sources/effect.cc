@@ -7,8 +7,9 @@
 extern "C" {
 #include <s_stuff.h>
 }
+#include <boost/utility/string_view.hpp>
+#include <algorithm>
 #include <iostream>
-#include <cstring>
 #include <cassert>
 #include <unistd.h>
 
@@ -25,12 +26,16 @@ struct Effect::Impl {
   unsigned blocksize {};
   unsigned blockavail {};
 
+  unsigned minblocksize {};
+  unsigned maxblocksize {};
+
   std::unique_ptr<const float *[]> a_ins;
   std::unique_ptr<float *[]> a_outs;
   const LV2_Atom_Sequence *ev_in {};
   LV2_Atom_Sequence *ev_out {};
 
-  signal_blocker fpe_blocker{SIGFPE};
+  LV2_URID_Map *map {};
+  LV2_URID_Unmap *unmap {};
 };
 
 //==============================================================================
@@ -42,6 +47,8 @@ Effect::Effect(double rate, LV2_URID_Map *map, LV2_URID_Unmap *unmap)
     throw std::runtime_error("could not initialize puredata");
 
   P->urid.midi_event = map->map(map->handle, LV2_MIDI__MidiEvent);
+  P->map = map;
+  P->unmap = unmap;
 
   signal_blocker fpe_blocker(SIGFPE);
   fpe_blocker.activate();
@@ -76,6 +83,20 @@ Effect::~Effect() {
 
 //==============================================================================
 void Effect::option(const LV2_Options_Option &o) {
+  LV2_URID_Map *map = P->map;
+
+  if (0) {
+    LV2_URID_Unmap *unmap = P->unmap;
+    boost::string_view name = unmap->unmap(unmap->handle, o.key);
+    std::cerr << "Option: " << name << "\n";
+  }
+
+  const uint32_t *value_uint = reinterpret_cast<const uint32_t *>(o.value);
+
+  if (o.key == map->map(map->handle, LV2_BUF_SIZE__maxBlockLength))
+    P->maxblocksize = *value_uint;
+  else if (o.key == map->map(map->handle, LV2_BUF_SIZE__minBlockLength))
+    P->minblocksize = *value_uint;
 }
 
 //==============================================================================
@@ -109,8 +130,8 @@ void Effect::connect_port(uint32_t port, void *data) {
 
 //==============================================================================
 void Effect::activate() {
-  P->fpe_blocker.activate();
-  SCOPE_EXIT { P->fpe_blocker.deactivate(); };
+  signal_blocker fpe_blocker(SIGFPE);
+  fpe_blocker.activate();
 
   pd_setinstance(P->pd);
 
@@ -122,7 +143,7 @@ void Effect::activate() {
   // run the patch once, in case of inits in the first run breaking RT
   const PdPatchInfo &info = ::pd_patch_info;
   const unsigned bs = P->blocksize;
-  std::memset(STUFF->st_soundin, 0, info.adc_count * bs * sizeof(float));
+  std::fill_n(STUFF->st_soundin, info.adc_count * bs, 0);
   sys_microsleep(0);
   sched_tick();
 
@@ -146,46 +167,60 @@ void Effect::run(unsigned nframes) {
   const unsigned adc_count = info.adc_count;
   const unsigned dac_count = info.dac_count;
 
-  P->fpe_blocker.activate();
-  SCOPE_EXIT { P->fpe_blocker.deactivate(); };
+  signal_blocker fpe_blocker(SIGFPE);
+  fpe_blocker.activate();
 
   pd_setinstance(P->pd);
+
+  float *soundin = STUFF->st_soundin;
+  const float *soundout = STUFF->st_soundout;
 
   const unsigned bs = P->blocksize;
   unsigned ba = P->blockavail;
 
+  auto pd_cycle = [&]() {
+    std::fill_n(STUFF->st_soundout, info.dac_count * bs, 0);
+    sys_microsleep(0);
+    sched_tick();
+    ba = bs;
+  };
+
+  // There is one pd buffer of input latency (by default 64 = 1.45ms@44.1kHz).
+  // It ensures we always have enough samples to feed pd. However this latency
+  // can be avoided when the frame count is fixed and multiple of the pd buffer.
+  const bool nolatency =
+      P->maxblocksize && P->maxblocksize == P->minblocksize &&
+      (P->maxblocksize % bs) == 0;
+
 #warning TODO midi messages
 
   for (unsigned iframe = 0; iframe < nframes;) {
-    // There is one pd buffer of input latency (by default 64 = 1.45ms@44.1kHz).
-    // It ensures we always have enough samples to feed pd. This latency could
-    // be avoided when the frame count is fixed and multiple of the pd buffer.
-    if (ba == 0) {
-      std::memset(STUFF->st_soundout, 0, info.dac_count * bs * sizeof(float));
-      sys_microsleep(0);
-      sched_tick();
-      ba = bs;
+    if (nolatency) {
+      //========================================================================
+      for (unsigned i = 0; i < adc_count; ++i)
+        std::copy_n(P->a_ins[i] + iframe, bs, soundin + i * bs);
+
+      pd_cycle();
+
+      for (unsigned i = 0; i < dac_count; ++i)
+        std::copy_n(soundout + i * bs, bs, P->a_outs[i] + iframe);
+
+      iframe += bs;
+    } else {
+      //========================================================================
+      if (ba == 0)
+        pd_cycle();
+
+      const unsigned ncopy = std::min(ba, nframes - iframe);
+
+      for (unsigned i = 0; i < adc_count; ++i)
+        std::copy_n(P->a_ins[i] + iframe, ncopy, soundin + i * bs + bs - ba);
+      for (unsigned i = 0; i < dac_count; ++i)
+        std::copy_n(soundout + i * bs + bs - ba, ncopy, P->a_outs[i] + iframe);
+
+      iframe += ncopy;
+      ba -= ncopy;
     }
-
-    float *soundin = STUFF->st_soundin;
-    const float *soundout = STUFF->st_soundout;
-
-    const unsigned ncopy = std::min(ba, nframes - iframe);
-
-    for (unsigned i = 0; i < adc_count; ++i) {
-      float *dst = soundin + i * bs + bs - ba;
-      const float *src = P->a_ins[i] + iframe;
-      std::memcpy(dst, src, ncopy * sizeof(float));
-    }
-
-    for (unsigned i = 0; i < dac_count; ++i) {
-      float *dst = P->a_outs[i] + iframe;
-      const float *src = soundout + i * bs + bs - ba;
-      std::memcpy(dst, src, ncopy * sizeof(float));
-    }
-
-    iframe += ncopy;
-    ba -= ncopy;
   }
 
   P->blockavail = ba;
