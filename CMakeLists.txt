@@ -18,7 +18,8 @@ include(LV2Project)
 #===============================================================================
 add_lv2_fx(fx
   sources/description.cc
-  sources/effect.cc)
+  sources/effect.cc
+  sources/utility/pd-miniparser.cc)
 
 #===============================================================================
 # LV2 GUI target

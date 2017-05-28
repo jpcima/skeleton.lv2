@@ -1,4 +1,11 @@
 
+set(CMAKE_THREAD_PREFER_PTHREAD ON)
+find_package(Threads REQUIRED)
+
+if(NOT CMAKE_USE_PTHREADS_INIT)
+  message(FATAL_ERROR "libpd requires pthread")
+endif()
+
 set(libpd_SOURCE_DIR
   "${PROJECT_SOURCE_DIR}/thirdparty/libpd")
 
@@ -103,18 +110,23 @@ target_compile_definitions(libpd
   PRIVATE "PD=1"
   PRIVATE "PD_INTERNAL=1"
   PRIVATE "HAVE_UNISTD_H=1"
-  PRIVATE "USEAPI_DUMMY=1")
+  PRIVATE "USEAPI_DUMMY=1"
+  PUBLIC "PDINSTANCE=1")
 target_include_directories(libpd
-  PRIVATE "${libpd_SOURCE_DIR}/pure-data/src"
+  PUBLIC "${libpd_SOURCE_DIR}/pure-data/src"
   PUBLIC "${libpd_SOURCE_DIR}/libpd_wrapper"
   PUBLIC "${libpd_SOURCE_DIR}/libpd_wrapper/util")
 set_target_properties(libpd PROPERTIES
   POSITION_INDEPENDENT_CODE ON
   C_VISIBILITY_PRESET hidden)
+target_link_libraries(libpd ${CMAKE_THREAD_LIBS_INIT})
 
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")
   target_link_libraries(libpd ws2_32 kernel32)
 else()
   target_compile_definitions(libpd PRIVATE "HAVE_LIBDL=1")
   target_link_libraries(libpd dl)
+  if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    target_link_libraries(libpd m)
+  endif()
 endif()

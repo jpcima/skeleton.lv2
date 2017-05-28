@@ -1,11 +1,11 @@
 #include "framework/ui.h"
 #include "meta/project.h"
+#include "utility/scope-guard.h"
 #include <tcl.h>
 #include <tk.h>
 #if defined(_WIN32)
 # include <tkWin.h>
 #endif
-#include <boost/scope_exit.hpp>
 #include <iostream>
 
 struct UI::Impl {
@@ -70,17 +70,17 @@ void UI::Impl::create_widget() {
     throw std::runtime_error("error creating the Tcl interpreter\n");
   this->interp = interp;
 
-  BOOST_SCOPE_EXIT(&success, this_, interp) {
-    if (!success) { Tcl_DeleteInterp(interp); this_->interp = nullptr; }
-  } BOOST_SCOPE_EXIT_END;
+  SCOPE_EXIT {
+    if (!success) {
+      Tcl_DeleteInterp(interp);
+      this->interp = nullptr;
+    }
+  };
 
   Tcl_InitMemory(interp);
 
   Tcl_Preserve(interp);
-
-  BOOST_SCOPE_EXIT(&success, interp) {
-    if (!success) Tcl_Release(interp);
-  } BOOST_SCOPE_EXIT_END;
+  SCOPE_EXIT { if (!success) Tcl_Release(interp); };
 
   const std::string argv[] = {
     PROJECT_NAME,

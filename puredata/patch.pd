@@ -1,5 +1,10 @@
-#N canvas 5 53 704 449 10;
+#N canvas 7 53 704 449 10;
 #X obj 277 162 adc~ 1 2;
 #X obj 282 224 dac~ 1 2;
+#X obj 392 154 notein;
+#X obj 394 239 noteout;
 #X connect 0 0 1 0;
 #X connect 0 1 1 1;
+#X connect 2 0 3 0;
+#X connect 2 1 3 1;
+#X connect 2 2 3 2;
