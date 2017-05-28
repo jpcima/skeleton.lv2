@@ -53,6 +53,7 @@ static EffectManifest create_effect_manifest() {
   // request features
   m.features.push_back(FeatureRequest{LV2_URID__map, RequiredFeature::Yes});
   m.features.push_back(FeatureRequest{LV2_URID__unmap, RequiredFeature::Yes});
+  m.features.push_back(FeatureRequest{LV2_OPTIONS__options, RequiredFeature::No});
   m.features.push_back(FeatureRequest{LV2_BUF_SIZE__fixedBlockLength, RequiredFeature::No});
 
   // puredata ports
