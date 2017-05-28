@@ -14,7 +14,6 @@ extern "C" {
 #include <cassert>
 #include <unistd.h>
 
-extern PdPatchInfo pd_patch_info;
 static bool libpd_initialized = false;
 
 struct Effect::Impl {
@@ -54,7 +53,7 @@ Effect::Effect(double rate, LV2_URID_Map *map, LV2_URID_Unmap *unmap)
   signal_blocker fpe_blocker(SIGFPE);
   fpe_blocker.activate();
 
-  const PdPatchInfo &info = ::pd_patch_info;
+  const PdPatchInfo &info = pd_patch_info();
   P->a_ins.reset(new const float *[info.adc_count]());
   P->a_outs.reset(new float *[info.dac_count]());
 
@@ -102,7 +101,7 @@ void Effect::option(const LV2_Options_Option &o) {
 
 //==============================================================================
 void Effect::connect_port(uint32_t port, void *data) {
-  const PdPatchInfo &info = ::pd_patch_info;
+  const PdPatchInfo &info = pd_patch_info();
 
   if (port < info.adc_count) {
     P->a_ins[port] = (const float *)data;
@@ -142,7 +141,7 @@ void Effect::activate() {
   libpd_finish_message("pd", "dsp");
 
   // run the patch once, in case of inits in the first run breaking RT
-  const PdPatchInfo &info = ::pd_patch_info;
+  const PdPatchInfo &info = pd_patch_info();
   const unsigned bs = P->blocksize;
   std::fill_n(STUFF->st_soundin, info.adc_count * bs, 0);
   sys_microsleep(0);
@@ -164,7 +163,7 @@ void Effect::deactivate() {
 void Effect::run(unsigned nframes) {
   const auto urid = P->urid;
 
-  const PdPatchInfo &info = ::pd_patch_info;
+  const PdPatchInfo &info = pd_patch_info();
   const unsigned adc_count = info.adc_count;
   const unsigned dac_count = info.dac_count;
 

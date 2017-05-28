@@ -19,6 +19,7 @@ include(LV2Project)
 add_lv2_fx(fx
   sources/description.cc
   sources/effect.cc
+  sources/utility/pd-patchinfo.cc
   sources/utility/pd-miniparser.cc
   sources/utility/pd-common.cc)
 

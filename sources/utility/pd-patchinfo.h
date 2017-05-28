@@ -13,3 +13,5 @@ struct PdPatchInfo {
   unsigned root_canvas_size[2] {};
   unsigned font_size {};
 };
+
+const PdPatchInfo &pd_patch_info();
