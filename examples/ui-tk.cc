@@ -32,6 +32,9 @@ UI::~UI() {
   Tcl_Release(P->interp);
 }
 
+void UI::option(const LV2_Options_Option &o) {
+}
+
 LV2UI_Widget UI::widget() const {
   if (!P->widget)
     P->create_widget();

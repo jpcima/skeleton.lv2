@@ -75,6 +75,10 @@ Effect::~Effect() {
 }
 
 //==============================================================================
+void Effect::option(const LV2_Options_Option &o) {
+}
+
+//==============================================================================
 void Effect::connect_port(uint32_t port, void *data) {
   const PdPatchInfo &info = ::pd_patch_info;
 
