@@ -17,17 +17,21 @@ static LV2UI_Handle instantiate(const LV2UI_Descriptor *descriptor,
   LV2_URID_Unmap *unmap {};
   LV2UI_Resize *resize {};
   void *parent {};
+  const LV2_Options_Option *opt {};
 
   for (const LV2_Feature *const *p = features, *f; (f = *p); ++p) {
     boost::string_view uri = f->URI;
-    if (uri == LV2_URID__map)
+    if (uri == LV2_URID__map) {
       map = reinterpret_cast<LV2_URID_Map *>(f->data);
-    else if (uri == LV2_URID__unmap)
+    } else if (uri == LV2_URID__unmap) {
       unmap = reinterpret_cast<LV2_URID_Unmap *>(f->data);
-    else if (uri == LV2_UI__resize)
+    } else if (uri == LV2_UI__resize) {
       resize = reinterpret_cast<LV2UI_Resize *>(f->data);
-    else if (uri == LV2_UI__parent)
+    } else if (uri == LV2_UI__parent) {
       parent = f->data;
+    } else if (uri == LV2_OPTIONS__options) {
+      opt = reinterpret_cast<LV2_Options_Option *>(f->data);
+    }
   }
 
   assert(map);
@@ -36,6 +40,10 @@ static LV2UI_Handle instantiate(const LV2UI_Descriptor *descriptor,
   std::unique_ptr<UI> ui;
   try {
     ui.reset(new UI(parent, map, unmap));
+    if (opt)
+      for (const LV2_Options_Option *optp = opt;
+           optp->key || optp->value; ++optp)
+        ui->option(*optp);
     *widget = ui->widget();
     if (resize)
       resize->ui_resize(resize->handle, UI::width(), UI::height());

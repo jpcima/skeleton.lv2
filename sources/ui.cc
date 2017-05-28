@@ -41,6 +41,9 @@ UI::~UI() {
     puglDestroy(P->view);
 }
 
+void UI::option(const LV2_Options_Option &option) {
+}
+
 LV2UI_Widget UI::widget() const {
   if (!P->widget)
     P->create_widget();

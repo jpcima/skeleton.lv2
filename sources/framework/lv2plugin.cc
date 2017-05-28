@@ -13,18 +13,26 @@ static LV2_Handle instantiate(
     const LV2_Feature *const *features) {
   LV2_URID_Map *map {};
   LV2_URID_Unmap *unmap {};
+  const LV2_Options_Option *opt {};
 
   for (const LV2_Feature *const *p = features, *f; (f = *p); ++p) {
     boost::string_view uri = f->URI;
-    if (uri == LV2_URID__map)
+    if (uri == LV2_URID__map) {
       map = reinterpret_cast<LV2_URID_Map *>(f->data);
-    else if (uri == LV2_URID__unmap)
+    } else if (uri == LV2_URID__unmap) {
       unmap = reinterpret_cast<LV2_URID_Unmap *>(f->data);
+    } else if (uri == LV2_OPTIONS__options) {
+      opt = reinterpret_cast<LV2_Options_Option *>(f->data);
+    }
   }
 
   std::unique_ptr<Effect> fx;
   try {
     fx.reset(new Effect(rate, map, unmap));
+    if (opt)
+      for (const LV2_Options_Option *optp = opt;
+           optp->key || optp->value; ++optp)
+        fx->option(*optp);
   } catch (std::exception &ex) {
     std::cerr << "error instanciating: " << ex.what() << "\n";
     return nullptr;

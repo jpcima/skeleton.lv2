@@ -9,6 +9,8 @@ class UI {
   UI(void *parent, LV2_URID_Map *map, LV2_URID_Unmap *unmap);
   ~UI();
 
+  void option(const LV2_Options_Option &o);
+
   LV2UI_Widget widget() const;
   static unsigned width();
   static unsigned height();

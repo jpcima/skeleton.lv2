@@ -22,6 +22,10 @@ Effect::~Effect() {
 }
 
 //==============================================================================
+void Effect::option(const LV2_Options_Option &o) {
+}
+
+//==============================================================================
 void Effect::connect_port(uint32_t port, void *data) {
   switch (port) {
     case 0: P->port_left = (float *)data; break;
