@@ -2,11 +2,11 @@
 #include "framework/lv2all.h"
 #include "utility/pd-miniparser.h"
 #include "utility/pd-patchinfo.h"
+#include "utility/pd-common.h"
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/dll.hpp>
-#include <iostream>
 namespace ptree = boost::property_tree;
 namespace fs = boost::filesystem;
 namespace dll = boost::dll;
@@ -24,27 +24,27 @@ static EffectManifest create_effect_manifest() {
   // identify the plugin directory
   fs::path plugin_dir = dll::symbol_location(create_effect_manifest).parent_path();
   fs::path pd_ini_path = plugin_dir / "pd.ini";
-  std::cerr << "[pd] config: " << pd_ini_path << "\n";
+  pd_logs() << "[pd] config: " << pd_ini_path << "\n";
 
   // load pd.ini and extract info from patch
   ptree::ptree pd_ini;
   ptree::ini_parser::read_ini(pd_ini_path.native(), pd_ini);
 
   fs::path pd_patch_path = plugin_dir / pd_ini.get<std::string>("puredata.patch-file");
-  std::cerr << "[pd] patch: " << pd_patch_path << "\n";
+  pd_logs() << "[pd] patch: " << pd_patch_path << "\n";
   info.patch_path = pd_patch_path.string();
   info.patch_base = pd_patch_path.filename().string();
   info.patch_dir = pd_patch_path.parent_path().string();
 
   // load the patch
   const std::vector<std::string> records = pd_file_read_records(info.patch_path);
-  std::cerr << "[pd] patch loaded, " << records.size() << " records\n";
+  pd_logs() << "[pd] patch loaded, " << records.size() << " records\n";
 
   pd_patch_getinfo(
       records,
       &info.adc_count, &info.dac_count,
       &info.has_midi_in, &info.has_midi_out);
-  std::cerr <<
+  pd_logs() <<
       "[pd] ADC count: " << info.adc_count << "\n"
       "[pd] DAC count: " << info.dac_count << "\n"
       "[pd] MIDI input: " << (info.has_midi_in ? "yes" : "no") << "\n"

@@ -1,6 +1,7 @@
 #include "framework/effect.h"
 #include "framework/lv2all.h"
 #include "utility/pd-patchinfo.h"
+#include "utility/pd-common.h"
 #include "utility/sys-signal.h"
 #include "utility/scope-guard.h"
 #include <z_libpd.h>
@@ -70,7 +71,7 @@ Effect::Effect(double rate, LV2_URID_Map *map, LV2_URID_Unmap *unmap)
     throw std::runtime_error("could not initialize audio");
 
   P->blocksize = libpd_blocksize();
-  std::cerr << "[pd] block size: " << P->blocksize << "\n";
+  pd_logs() << "[pd] block size: " << P->blocksize << "\n";
 
   success = true;
 }
@@ -228,8 +229,10 @@ void Effect::run(unsigned nframes) {
 
 //==============================================================================
 [[gnu::constructor]] static void init_plugin() {
-  const char msg[] = "[pd] initialize pd\n";
-  write(2, msg, sizeof(msg) - 1);
+  if (pd_verbose) {
+    const char msg[] = "[pd] initialize pd\n";
+    write(2, msg, sizeof(msg) - 1);
+  }
 
   signal_blocker fpe_blocker(SIGFPE);
   fpe_blocker.activate();
@@ -238,8 +241,10 @@ void Effect::run(unsigned nframes) {
 }
 
 [[gnu::destructor]] static void fini_plugin() {
-  const char msg[] = "[pd] finalize pd\n";
-  write(2, msg, sizeof(msg) - 1);
+  if (pd_verbose) {
+    const char msg[] = "[pd] finalize pd\n";
+    write(2, msg, sizeof(msg) - 1);
+  }
 
   signal_blocker fpe_blocker(SIGFPE);
   fpe_blocker.activate();
