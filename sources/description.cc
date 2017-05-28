@@ -115,13 +115,20 @@ static void load_pd_info() {
   const std::vector<std::string> records = pd_file_read_records(info.patch_path);
   pd_logs() << "[pd] patch loaded, " << records.size() << " records\n";
 
-  pd_patch_getinfo(
-      records,
-      &info.adc_count, &info.dac_count,
-      &info.has_midi_in, &info.has_midi_out);
+  if (!pd_patch_getinfo(records,
+                        &info.adc_count, &info.dac_count,
+                        &info.has_midi_in, &info.has_midi_out,
+                        info.root_canvas_pos, info.root_canvas_size,
+                        &info.font_size))
+    throw std::runtime_error("error getting patch info");
   pd_logs() <<
       "[pd] ADC count: " << info.adc_count << "\n"
       "[pd] DAC count: " << info.dac_count << "\n"
       "[pd] MIDI input: " << (info.has_midi_in ? "yes" : "no") << "\n"
-      "[pd] MIDI output: " << (info.has_midi_out ? "yes" : "no") << "\n";
+      "[pd] MIDI output: " << (info.has_midi_out ? "yes" : "no") << "\n"
+      "[pd] canvas position: " << info.root_canvas_pos[0] << ' '
+                         << info.root_canvas_pos[1] << "\n"
+      "[pd] canvas size: " << info.root_canvas_size[0] << ' '
+                         << info.root_canvas_size[1] << "\n"
+      "[pd] font size: " << info.font_size << "\n";
 }

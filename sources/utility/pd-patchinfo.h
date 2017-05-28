@@ -9,4 +9,7 @@ struct PdPatchInfo {
   unsigned dac_count {};
   bool has_midi_in {};
   bool has_midi_out {};
+  int root_canvas_pos[2] {};
+  unsigned root_canvas_size[2] {};
+  unsigned font_size {};
 };

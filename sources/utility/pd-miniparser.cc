@@ -83,6 +83,23 @@ bool pd_record_parse_obj(
   return true;
 }
 
+bool pd_record_parse_root_canvas(
+    const std::string &record,
+    int pos[2], unsigned size[2], unsigned *fs) {
+  int idummy[2];
+  if (!pos) pos = idummy;
+  if (!size) size = (unsigned *)idummy;
+  if (!fs) fs = (unsigned *)idummy;
+
+  unsigned count {};
+  if (sscanf(record.data(), "#N canvas %d %d %u %u %u%n",
+             &pos[0], &pos[1], &size[0], &size[1], fs, &count) != 5 ||
+      count != record.size())
+    return false;
+
+  return true;
+}
+
 boost::string_view pd_exp_cmd(const std::string &exp_) {
   boost::string_view exp(exp_);
   return exp.substr(0, exp.find(' '));
@@ -123,10 +140,18 @@ bool pd_exp_parse_dac(const std::string &exp, std::vector<int> &channels) {
   return pd_exp_cmd(exp) == "dac~" && pd_exp_parse_adcdac(tokens, channels);
 }
 
-void pd_patch_getinfo(
+bool pd_patch_getinfo(
     const std::vector<std::string> &records,
     unsigned *adc_count, unsigned *dac_count,
-    bool *has_midi_in, bool *has_midi_out) {
+    bool *has_midi_in, bool *has_midi_out,
+    int root_canvas_pos[2], unsigned root_canvas_size[2], unsigned *font_size) {
+  if (records.empty())
+    return false;
+
+  if (!pd_record_parse_root_canvas(
+          records.front(), root_canvas_pos, root_canvas_size, font_size))
+    return false;
+
   std::vector<int> channels;
   channels.reserve(32);
 
@@ -165,4 +190,6 @@ void pd_patch_getinfo(
       }
     }
   }
+
+  return true;
 }
