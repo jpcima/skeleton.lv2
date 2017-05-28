@@ -27,7 +27,10 @@ add_lv2_fx(fx
 # LV2 GUI target
 #===============================================================================
 add_lv2_tkui(ui
-  sources/ui.cc)
+  sources/ui.cc
+  sources/utility/pd-patchinfo.cc
+  sources/utility/pd-miniparser.cc
+  sources/utility/pd-common.cc)
 
 #===============================================================================
 # for Puredata plugins
@@ -35,10 +38,18 @@ add_lv2_tkui(ui
 if(NOT USE_DYN_MANIFEST)
   message(FATAL_ERROR "Puredata plugins must be dynmanifest")
 endif()
+set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost COMPONENTS filesystem system REQUIRED)
 target_link_libraries(fx
   "${Boost_FILESYSTEM_LIBRARY}"
   "${Boost_SYSTEM_LIBRARY}")
+target_link_libraries(ui
+  "${Boost_FILESYSTEM_LIBRARY}"
+  "${Boost_SYSTEM_LIBRARY}")
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+  target_link_libraries(fx dl)
+  target_link_libraries(ui dl)
+endif()
 
 include(TargetLibpd)
 target_link_libraries(fx libpd)
@@ -49,4 +60,12 @@ if(NOT EXISTS "${PD_DATA_DIR}/pd.ini")
 endif()
 add_custom_target(pd-ini ALL
   COMMAND "${CMAKE_COMMAND}" -E copy_directory
-  "${PD_DATA_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/lv2/${PROJECT_NAME}.lv2/")
+  "${PD_DATA_DIR}"
+  "${CMAKE_CURRENT_BINARY_DIR}/lv2/${PROJECT_NAME}.lv2/")
+add_custom_target(pd-lib ALL
+  COMMAND "${CMAKE_COMMAND}" -E make_directory
+  "${CMAKE_CURRENT_BINARY_DIR}/lv2/${PROJECT_NAME}.lv2/pd-lib/tcl/"
+  COMMAND "${CMAKE_COMMAND}" -E copy
+  "${PROJECT_SOURCE_DIR}/thirdparty/libpd/pure-data/tcl/*.tcl"
+  "${PROJECT_SOURCE_DIR}/thirdparty/libpd/pure-data/tcl/pd.ico"
+  "${CMAKE_CURRENT_BINARY_DIR}/lv2/${PROJECT_NAME}.lv2/pd-lib/tcl/")

@@ -1,10 +1,13 @@
 #pragma once
+#include <boost/property_tree/ptree.hpp>
 #include <string>
 
 struct PdPatchInfo {
+  boost::property_tree::ptree ini;
   std::string patch_path {};
   std::string patch_base {};
   std::string patch_dir {};
+  std::string lib_dir {};
   unsigned adc_count {};
   unsigned dac_count {};
   bool has_midi_in {};

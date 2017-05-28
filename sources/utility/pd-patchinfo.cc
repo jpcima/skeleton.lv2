@@ -1,7 +1,6 @@
 #include "pd-patchinfo.h"
 #include "pd-miniparser.h"
 #include "pd-common.h"
-#include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/dll.hpp>
@@ -33,7 +32,7 @@ const PdPatchInfo &pd_patch_info() {
   pd_logs() << "[pd] config: " << pd_ini_path << "\n";
 
   // load pd.ini and extract info from patch
-  ptree::ptree pd_ini;
+  ptree::ptree &pd_ini = info->ini;
   ptree::ini_parser::read_ini(pd_ini_path.native(), pd_ini);
 
   fs::path pd_patch_path = plugin_dir / pd_ini.get<std::string>("puredata.patch-file");
@@ -41,6 +40,10 @@ const PdPatchInfo &pd_patch_info() {
   info->patch_path = pd_patch_path.string();
   info->patch_base = pd_patch_path.filename().string();
   info->patch_dir = pd_patch_path.parent_path().string();
+
+  fs::path pd_lib_dir = plugin_dir / pd_ini.get<std::string>("puredata.lib-dir");
+  pd_logs() << "[pd] lib dir: " << pd_lib_dir << "\n";
+  info->lib_dir = pd_lib_dir.string();
 
   // load the patch
   const std::vector<std::string> records = pd_file_read_records(info->patch_path);
