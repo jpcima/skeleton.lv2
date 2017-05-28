@@ -20,7 +20,7 @@ void signal_blocker::activate() {
   int ret = pthread_sigmask(SIG_BLOCK, &mask, &omask);
   if (ret != 0)
     throw std::system_error(ret, std::system_category());
-  masked_ = sigismember(&omask, sig_);
+  masked_ = sigismember(&omask, sig_) == 1;
   active_ = true;
 }
 
