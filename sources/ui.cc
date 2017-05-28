@@ -1,5 +1,6 @@
 #include "framework/ui.h"
 #include "meta/project.h"
+#include "utility/pd-patchinfo.h"
 #include "utility/scope-guard.h"
 #include <tcl.h>
 #include <tk.h>
@@ -9,8 +10,6 @@
 #include <iostream>
 
 struct UI::Impl {
-  static constexpr unsigned width = 600;
-  static constexpr unsigned height = 400;
   Tcl_Interp *interp = nullptr;
   void *widget = nullptr;
   void *parent = nullptr;
@@ -42,11 +41,11 @@ LV2UI_Widget UI::widget() const {
 }
 
 unsigned UI::width() {
-  return Impl::width;
+  return pd_patch_info().root_canvas_size[0];
 }
 
 unsigned UI::height() {
-  return Impl::height;
+  return pd_patch_info().root_canvas_size[1];
 }
 
 void UI::port_event(
@@ -88,7 +87,7 @@ void UI::Impl::create_widget() {
   const std::string argv[] = {
     PROJECT_NAME,
     "-use", std::to_string(parent),
-    "-geometry", std::to_string(Impl::width) + 'x' + std::to_string(Impl::height)};
+    "-geometry", std::to_string(UI::width()) + 'x' + std::to_string(UI::height())};
   Impl::tk_init(argv, sizeof(argv) / sizeof(argv[0]));
 
   Impl::tk_exec();
@@ -125,6 +124,11 @@ void UI::Impl::tk_init(const std::string *args, unsigned count) {
 
 void UI::Impl::tk_exec() {
   Tcl_Interp *interp = this->interp;
+
+  const PdPatchInfo &info = pd_patch_info();
+  std::string script_path = info.lib_dir + "/tcl/pd-gui.tcl";
+#warning TODO execute the GUI
+  
 
   // run your Tcl script here
   std::string script =
