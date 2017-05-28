@@ -12,43 +12,16 @@ namespace fs = boost::filesystem;
 namespace dll = boost::dll;
 
 PdPatchInfo pd_patch_info;
-///
+static void load_pd_info();
 
+//==============================================================================
 static EffectManifest create_effect_manifest() {
   EffectManifest m;
   m.uri = effect_uri;
   m.name = PROJECT_DISPLAY_NAME;
 
-  PdPatchInfo &info = ::pd_patch_info;
-
-  // identify the plugin directory
-  fs::path plugin_dir = dll::symbol_location(create_effect_manifest).parent_path();
-  fs::path pd_ini_path = plugin_dir / "pd.ini";
-  pd_logs() << "[pd] config: " << pd_ini_path << "\n";
-
-  // load pd.ini and extract info from patch
-  ptree::ptree pd_ini;
-  ptree::ini_parser::read_ini(pd_ini_path.native(), pd_ini);
-
-  fs::path pd_patch_path = plugin_dir / pd_ini.get<std::string>("puredata.patch-file");
-  pd_logs() << "[pd] patch: " << pd_patch_path << "\n";
-  info.patch_path = pd_patch_path.string();
-  info.patch_base = pd_patch_path.filename().string();
-  info.patch_dir = pd_patch_path.parent_path().string();
-
-  // load the patch
-  const std::vector<std::string> records = pd_file_read_records(info.patch_path);
-  pd_logs() << "[pd] patch loaded, " << records.size() << " records\n";
-
-  pd_patch_getinfo(
-      records,
-      &info.adc_count, &info.dac_count,
-      &info.has_midi_in, &info.has_midi_out);
-  pd_logs() <<
-      "[pd] ADC count: " << info.adc_count << "\n"
-      "[pd] DAC count: " << info.dac_count << "\n"
-      "[pd] MIDI input: " << (info.has_midi_in ? "yes" : "no") << "\n"
-      "[pd] MIDI output: " << (info.has_midi_out ? "yes" : "no") << "\n";
+  load_pd_info();
+  const PdPatchInfo &info = ::pd_patch_info;
 
   // request features
   m.features.push_back(FeatureRequest{LV2_URID__map, RequiredFeature::Yes});
@@ -56,7 +29,7 @@ static EffectManifest create_effect_manifest() {
   m.features.push_back(FeatureRequest{LV2_OPTIONS__options, RequiredFeature::No});
   m.features.push_back(FeatureRequest{LV2_BUF_SIZE__fixedBlockLength, RequiredFeature::No});
 
-  // puredata ports
+  // ports according to patch info
   for (unsigned i = 0, n = info.adc_count; i < n; ++i) {
     std::unique_ptr<AudioPort> p(new AudioPort);
     p->direction = PortDirection::Input;
@@ -93,6 +66,7 @@ static EffectManifest create_effect_manifest() {
   return m;
 }
 
+//==============================================================================
 static boost::optional<UIManifest> create_ui_manifest() {
   UIManifest m;
   m.uri = ui_uri;
@@ -114,5 +88,40 @@ static boost::optional<UIManifest> create_ui_manifest() {
   return m;
 }
 
+//==============================================================================
 const EffectManifest effect_manifest = create_effect_manifest();
 const boost::optional<UIManifest> ui_manifest = create_ui_manifest();
+
+//==============================================================================
+static void load_pd_info() {
+  PdPatchInfo &info = ::pd_patch_info;
+
+  // identify the plugin directory
+  fs::path plugin_dir = dll::symbol_location(load_pd_info).parent_path();
+  fs::path pd_ini_path = plugin_dir / "pd.ini";
+  pd_logs() << "[pd] config: " << pd_ini_path << "\n";
+
+  // load pd.ini and extract info from patch
+  ptree::ptree pd_ini;
+  ptree::ini_parser::read_ini(pd_ini_path.native(), pd_ini);
+
+  fs::path pd_patch_path = plugin_dir / pd_ini.get<std::string>("puredata.patch-file");
+  pd_logs() << "[pd] patch: " << pd_patch_path << "\n";
+  info.patch_path = pd_patch_path.string();
+  info.patch_base = pd_patch_path.filename().string();
+  info.patch_dir = pd_patch_path.parent_path().string();
+
+  // load the patch
+  const std::vector<std::string> records = pd_file_read_records(info.patch_path);
+  pd_logs() << "[pd] patch loaded, " << records.size() << " records\n";
+
+  pd_patch_getinfo(
+      records,
+      &info.adc_count, &info.dac_count,
+      &info.has_midi_in, &info.has_midi_out);
+  pd_logs() <<
+      "[pd] ADC count: " << info.adc_count << "\n"
+      "[pd] DAC count: " << info.dac_count << "\n"
+      "[pd] MIDI input: " << (info.has_midi_in ? "yes" : "no") << "\n"
+      "[pd] MIDI output: " << (info.has_midi_out ? "yes" : "no") << "\n";
+}
