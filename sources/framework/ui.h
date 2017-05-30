@@ -6,7 +6,8 @@
 
 class UI {
  public:
-  UI(void *parent, LV2_URID_Map *map, LV2_URID_Unmap *unmap);
+  UI(void *parent, LV2_URID_Map *map, LV2_URID_Unmap *unmap,
+     const char *bundle_path);
   ~UI();
 
   void option(const LV2_Options_Option &o);

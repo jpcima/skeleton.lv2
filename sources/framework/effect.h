@@ -5,7 +5,8 @@
 
 class Effect {
  public:
-  Effect(double rate, LV2_URID_Map *map, LV2_URID_Unmap *unmap);
+  Effect(double rate, LV2_URID_Map *map, LV2_URID_Unmap *unmap,
+         const char *bundle_path);
   ~Effect();
 
   //============================================================================

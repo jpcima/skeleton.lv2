@@ -23,7 +23,8 @@ struct UI::Impl {
 };
 
 //==============================================================================
-UI::UI(void *parent, LV2_URID_Map *map, LV2_URID_Unmap *unmap)
+UI::UI(void *parent, LV2_URID_Map *map, LV2_URID_Unmap *unmap,
+       const char *bundle_path)
     : P(new Impl) {
   P->parent = PuglNativeWindow(parent);
 }

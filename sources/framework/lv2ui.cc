@@ -39,7 +39,7 @@ static LV2UI_Handle instantiate(const LV2UI_Descriptor *descriptor,
 
   std::unique_ptr<UI> ui;
   try {
-    ui.reset(new UI(parent, map, unmap));
+    ui.reset(new UI(parent, map, unmap, bundle_path));
     if (opt)
       for (const LV2_Options_Option *optp = opt;
            optp->key || optp->value; ++optp)

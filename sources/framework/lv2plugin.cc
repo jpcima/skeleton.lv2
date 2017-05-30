@@ -28,7 +28,7 @@ static LV2_Handle instantiate(
 
   std::unique_ptr<Effect> fx;
   try {
-    fx.reset(new Effect(rate, map, unmap));
+    fx.reset(new Effect(rate, map, unmap, bundle_path));
     if (opt)
       for (const LV2_Options_Option *optp = opt;
            optp->key || optp->value; ++optp)

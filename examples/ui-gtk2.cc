@@ -9,7 +9,8 @@ struct UI::Impl {
 };
 
 //==============================================================================
-UI::UI(void *parent)
+UI::UI(void *parent, LV2_URID_Map *map, LV2_URID_Unmap *unmap,
+       const char *bundle_path)
     : P(new Impl) {
 }
 

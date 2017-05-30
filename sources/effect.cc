@@ -13,7 +13,8 @@ struct Effect::Impl {
 };
 
 //==============================================================================
-Effect::Effect(double rate, LV2_URID_Map *map, LV2_URID_Unmap *unmap)
+Effect::Effect(double rate, LV2_URID_Map *map, LV2_URID_Unmap *unmap,
+               const char *bundle_path)
     : P(new Impl) {
   P->urid.midi_event = map->map(map->handle, LV2_MIDI__MidiEvent);
 }
